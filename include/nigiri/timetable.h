@@ -206,8 +206,7 @@ struct timetable {
   }
 
   template <typename RT>
-  void register_locations_in_geometries(
-      std::unique_ptr<RT>& location_rtree) {
+  void register_locations_in_geometries(std::unique_ptr<RT>& location_rtree) {
     for (auto i = 0; i < geometry_.size(); i++) {
       auto const idx = geometry_idx_t{i};
       auto b = geometry_[idx].bounding_box();
