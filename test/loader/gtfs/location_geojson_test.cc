@@ -219,7 +219,7 @@ TEST(gtfs, register_locations_in_geometries) {
 
   std::unique_ptr<pointer_rtree> rtree = std::make_unique<pointer_rtree>(tt);
 
-  tt.register_locations_in_geometries(std::move(rtree));
+  tt.register_locations_in_geometries(rtree);
 
   auto berlin_idx = geojson.at("Berlin");
 

@@ -206,8 +206,8 @@ struct timetable {
   }
 
   template <typename RT>
-  std::unique_ptr<RT> register_locations_in_geometries(
-      std::unique_ptr<RT> location_rtree) {
+  void register_locations_in_geometries(
+      std::unique_ptr<RT>& location_rtree) {
     for (auto i = 0; i < geometry_.size(); i++) {
       auto const idx = geometry_idx_t{i};
       auto b = geometry_[idx].bounding_box();
@@ -221,7 +221,6 @@ struct timetable {
           });
       tg_geom_free(m);
     }
-    return std::move(location_rtree);
   }
 
   // template <typename Fn>
