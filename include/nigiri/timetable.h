@@ -152,7 +152,7 @@ struct timetable {
 
   match_t lookup_td_stops(geo::latlng const& center,
                           double const max_match_distance =
-                              std::numeric_limits<double>::epsilon()) {
+                              std::numeric_limits<double>::epsilon()) const {
     auto radius = max_match_distance;
     if (max_match_distance == 0.0) {
       radius = std::numeric_limits<double>::epsilon();
@@ -317,15 +317,17 @@ struct timetable {
     return idx;
   }
 
-  std::optional<std::int32_t> get_geometry_trip_data_idx(
-      unixtime_t timestamp, geometry_trip_idx_t idx, stop_type stop_type) {
+  std::vector<std::uint32_t> get_geometry_trip_data_idxs(
+      unixtime_t timestamp,
+      geometry_trip_idx_t idx,
+      stop_type stop_type) const {
     vecvec<geometry_trip_idx_t, booking_rule_idx_t> stop_type_booking_rule;
     if (stop_type == kPickup) {
       stop_type_booking_rule = pickup_booking_rules_;
     } else {
       stop_type_booking_rule = dropoff_booking_rules_;
     }
-
+    std::vector<std::uint32_t> result{};
     for (auto i = 0; i < stop_type_booking_rule[idx].size(); i++) {
       auto bitfield = bitfields_[booking_rules_[stop_type_booking_rule[idx][i]]
                                      .bitfield_idx_];
@@ -333,10 +335,10 @@ struct timetable {
       auto const start_date = internal_interval_days().from_;
 
       if (bitfield[(timestamp_days - start_date).count()] == 1) {
-        return i;
+        result.push_back(i);
       }
     }
-    return std::nullopt;
+    return result;
   }
 
   template <typename TripId>
