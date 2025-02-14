@@ -188,16 +188,15 @@ TEST(gtfs, read_stop_times_gtfs_flex_example_data) {
           EXPECT_EQ(tt.trip_idx_to_geometry_idxs_[trip_idx][i], g_idx);
         }
 
-        geometry_trip_idx gt_idx;
-        gt_idx = geometry_trip_idx{trip_idx, geo_idx};
+        auto gt_idx = geometry_trip_idx{trip_idx, geo_idx};
         auto idx = tt.geometry_trip_idxs_[gt_idx];
 
-        EXPECT_EQ(tt.window_times_.at(idx)[0].start_, expected_window.start_);
-        EXPECT_EQ(tt.window_times_.at(idx)[0].end_, expected_window.end_);
-        EXPECT_EQ(tt.pickup_booking_rules_.at(idx)[0], expected_pickup);
-        EXPECT_EQ(tt.dropoff_booking_rules_.at(idx)[0], expected_dropoff);
-        EXPECT_EQ(tt.pickup_types_.at(idx)[0], expected_pickup_type);
-        EXPECT_EQ(tt.dropoff_types_.at(idx)[0], expected_dropoff_type);
+        EXPECT_EQ(tt.window_times_.at(idx).start_, expected_window.start_);
+        EXPECT_EQ(tt.window_times_.at(idx).end_, expected_window.end_);
+        EXPECT_EQ(tt.pickup_booking_rules_.at(idx), expected_pickup);
+        EXPECT_EQ(tt.dropoff_booking_rules_.at(idx), expected_dropoff);
+        EXPECT_EQ(tt.pickup_types_.at(idx), expected_pickup_type);
+        EXPECT_EQ(tt.dropoff_types_.at(idx), expected_dropoff_type);
       };
   auto const br_idx_3 = booking_rules.at("3");
   auto const br_idx_4 = booking_rules.at("4");

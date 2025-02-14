@@ -282,24 +282,25 @@ struct timetable {
           "trip_idx is invalid");
       return geometry_trip_idx_t::invalid();
     }
+    auto idx = geometry_trip_idx_t{window_times_.size()};
+    // auto idx = utl::get_or_create(
+    //     geometry_trip_idxs_, geometry_trip_idx{trip_idx, geo_idx}, [&]() {
+    //       auto next_idx = geometry_trip_idx_t{window_times_.size()};
+    //       pickup_types_.emplace_back(std::vector<pickup_dropoff_type>{});
+    //       dropoff_types_.emplace_back(std::vector<pickup_dropoff_type>{});
+    //       window_times_.emplace_back(std::vector<stop_window>{});
+    //       pickup_booking_rules_.emplace_back(std::vector<booking_rule_idx_t>{});
+    //       dropoff_booking_rules_.emplace_back(
+    //           std::vector<booking_rule_idx_t>{});
+    //       return next_idx;
+    //     });
 
-    auto idx = utl::get_or_create(
-        geometry_trip_idxs_, geometry_trip_idx{trip_idx, geo_idx}, [&]() {
-          auto next_idx = geometry_trip_idx_t{window_times_.size()};
-          pickup_types_.emplace_back(std::vector<pickup_dropoff_type>{});
-          dropoff_types_.emplace_back(std::vector<pickup_dropoff_type>{});
-          window_times_.emplace_back(std::vector<stop_window>{});
-          pickup_booking_rules_.emplace_back(std::vector<booking_rule_idx_t>{});
-          dropoff_booking_rules_.emplace_back(
-              std::vector<booking_rule_idx_t>{});
-          return next_idx;
-        });
-
-    pickup_types_[idx].push_back(pickup_type);
-    dropoff_types_[idx].push_back(dropoff_type);
-    window_times_[idx].push_back(stop_windows);
-    pickup_booking_rules_[idx].push_back(pickup_booking_rule_id);
-    dropoff_booking_rules_[idx].push_back(dropoff_booking_rule_id);
+    geometry_trip_idxs_.emplace(geometry_trip_idx{trip_idx, geo_idx}, idx);
+    pickup_types_.emplace_back(pickup_type);
+    dropoff_types_.emplace_back(dropoff_type);
+    window_times_.emplace_back(stop_windows);
+    pickup_booking_rules_.emplace_back(pickup_booking_rule_id);
+    dropoff_booking_rules_.emplace_back(dropoff_booking_rule_id);
 
     // Could be improved by implementing .erase function to base_vec and using
     // std::unique afterwards
@@ -317,29 +318,31 @@ struct timetable {
     return idx;
   }
 
-  std::vector<std::uint32_t> get_geometry_trip_data_idxs(
-      unixtime_t timestamp,
-      geometry_trip_idx_t idx,
-      stop_type stop_type) const {
-    vecvec<geometry_trip_idx_t, booking_rule_idx_t> stop_type_booking_rule;
-    if (stop_type == kPickup) {
-      stop_type_booking_rule = pickup_booking_rules_;
-    } else {
-      stop_type_booking_rule = dropoff_booking_rules_;
-    }
-    std::vector<std::uint32_t> result{};
-    for (auto i = 0; i < stop_type_booking_rule[idx].size(); i++) {
-      auto bitfield = bitfields_[booking_rules_[stop_type_booking_rule[idx][i]]
-                                     .bitfield_idx_];
-      auto const timestamp_days = date::sys_days(floor<date::days>(timestamp));
-      auto const start_date = internal_interval_days().from_;
-
-      if (bitfield[(timestamp_days - start_date).count()] == 1) {
-        result.push_back(i);
-      }
-    }
-    return result;
-  }
+  // std::vector<std::uint32_t> get_geometry_trip_data_idxs(
+  //     unixtime_t timestamp,
+  //     geometry_trip_idx_t idx,
+  //     stop_type stop_type) const {
+  //   vecvec<geometry_trip_idx_t, booking_rule_idx_t> stop_type_booking_rule;
+  //   if (stop_type == kPickup) {
+  //     stop_type_booking_rule = pickup_booking_rules_;
+  //   } else {
+  //     stop_type_booking_rule = dropoff_booking_rules_;
+  //   }
+  //   std::vector<std::uint32_t> result{};
+  //   for (auto i = 0; i < stop_type_booking_rule[idx].size(); i++) {
+  //     auto bitfield =
+  //     bitfields_[booking_rules_[stop_type_booking_rule[idx][i]]
+  //                                    .bitfield_idx_];
+  //     auto const timestamp_days =
+  //     date::sys_days(floor<date::days>(timestamp)); auto const start_date =
+  //     internal_interval_days().from_;
+  //
+  //     if (bitfield[(timestamp_days - start_date).count()] == 1) {
+  //       result.push_back(i);
+  //     }
+  //   }
+  //   return result;
+  // }
 
   template <typename TripId>
   trip_idx_t register_trip_id(TripId const& trip_id_str,
@@ -358,6 +361,7 @@ struct timetable {
     trip_ids_.emplace_back().emplace_back(trip_id_idx);
 
     trip_idx_to_geometry_idxs_.emplace_back(std::vector<geometry_idx_t>{});
+    trip_service_.emplace_back(bitfield_idx_t::invalid());
     return trip_idx;
   }
 
@@ -744,11 +748,13 @@ struct timetable {
   vector_map<booking_rule_idx_t, booking_rule> booking_rules_;
 
   // stop times
+  vector_map<trip_idx_t, bitfield_idx_t> trip_service_;
+
   hash_map<geometry_trip_idx, geometry_trip_idx_t> geometry_trip_idxs_;
-  vecvec<geometry_trip_idx_t, stop_window> window_times_;
-  vecvec<geometry_trip_idx_t, booking_rule_idx_t> pickup_booking_rules_;
-  vecvec<geometry_trip_idx_t, booking_rule_idx_t> dropoff_booking_rules_;
-  vecvec<geometry_trip_idx_t, pickup_dropoff_type> pickup_types_;
-  vecvec<geometry_trip_idx_t, pickup_dropoff_type> dropoff_types_;
+  vector_map<geometry_trip_idx_t, stop_window> window_times_;
+  vector_map<geometry_trip_idx_t, booking_rule_idx_t> pickup_booking_rules_;
+  vector_map<geometry_trip_idx_t, booking_rule_idx_t> dropoff_booking_rules_;
+  vector_map<geometry_trip_idx_t, pickup_dropoff_type> pickup_types_;
+  vector_map<geometry_trip_idx_t, pickup_dropoff_type> dropoff_types_;
 };
 }  // namespace nigiri

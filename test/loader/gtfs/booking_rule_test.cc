@@ -15,6 +15,8 @@ using namespace nigiri::loader::gtfs;
 
 TEST(gtfs, booking_rule) {
   timetable tt;
+  tt.date_range_ = interval{date::sys_days{date::January / 1 / 2024},
+                            date::sys_days{date::December / 31 / 2024}};
 
   auto calendar =
       read_calendar(example_files().get_file(kBookingRuleCalendarFile).data());
@@ -25,6 +27,14 @@ TEST(gtfs, booking_rule) {
 
   auto const booking_rules = read_booking_rules(
       services, tt, example_files().get_file(kBookingRulesFile).data());
+
+  auto const expected_bitfield = bitfield{
+      "011110011001111100111110011111001111100111110011111001111100111110011111"
+      "001111100111110011111001010000111110011111001111100111110011111001011100"
+      "111110011111001111100111110011111001111100111110011111001111100111110011"
+      "111001111100111110011111001111100111110011111001111100111100011111001111"
+      "100111110011111001111100111110011111001111100111110011111001011100111110"
+      "01111100000"};
 
   // Real-Time-Booking
   auto const assert_realtime_booking = [&](std::string const& id) {
@@ -130,6 +140,8 @@ TEST(gtfs, booking_rule) {
     EXPECT_EQ(booking_rule.prior_notice_last_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.prior_notice_start_day_, 30);
     EXPECT_EQ(booking_rule.prior_notice_start_time_, hhmm_to_min("08:00:00"));
-    EXPECT_NE(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
+    ASSERT_NE(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
+    ASSERT_LT(booking_rule.bitfield_idx_.v_, tt.bitfields_.size());
+    EXPECT_EQ(tt.bitfields_.at(booking_rule.bitfield_idx_), expected_bitfield);
   });
 }

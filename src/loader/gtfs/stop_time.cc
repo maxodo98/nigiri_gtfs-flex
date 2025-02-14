@@ -93,6 +93,7 @@ void read_stop_times(timetable& tt,
       .in_high(file_content.size());
   auto lookup_direction = cached_lookup(trips.directions_);
 
+  hash_map<bitfield const*, bitfield_idx_t> registered_bitfields;
   utl::line_range{
       utl::make_buf_reader(file_content, progress_tracker->update_fn())}  //
       | utl::csv<csv_stop_time>()  //
@@ -169,6 +170,16 @@ void read_stop_times(timetable& tt,
             t->trip_idx_ = tt.register_trip_id(
                 t->id_, src, t->display_name(tt),
                 {source_file_idx_t{0}, t->from_line_, t->to_line_});
+            if (t->service_ != nullptr) {
+              bitfield_idx_t bit_idx;
+              if (registered_bitfields.contains(t->service_)) {
+                bit_idx = registered_bitfields[t->service_];
+              } else {
+                bit_idx = tt.register_bitfield(*t->service_);
+                registered_bitfields.emplace(t->service_, bit_idx);
+              }
+              tt.trip_service_[t->trip_idx_] = bit_idx;
+            }
           }
 
           tt.register_geometry_trip(
@@ -176,7 +187,6 @@ void read_stop_times(timetable& tt,
               static_cast<pickup_dropoff_type>(*s.pickup_type_),
               static_cast<pickup_dropoff_type>(*s.drop_off_type_), window_time,
               pickup_booking_rule_idx, dropoff_booking_rule_idx);
-          return;
         }
 
         try {
