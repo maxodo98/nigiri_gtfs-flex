@@ -314,6 +314,7 @@ constexpr duration_t operator""_days(unsigned long long n) {
 using minutes_after_midnight_t = duration_t;
 
 struct stop_window {
+  CISTA_COMPARABLE();
   minutes_after_midnight_t start_{0}, end_{0};
 };
 
@@ -333,14 +334,14 @@ using timezone = variant<pair<string, void const*>, tz_offsets>;
 struct booking_rule {
   CISTA_COMPARABLE()
 
-  uint8_t type_;
-  uint16_t prior_notice_duration_min_;
-  uint16_t prior_notice_duration_max_;
-  uint16_t prior_notice_last_day_;
-  duration_t prior_notice_last_time_;
-  uint16_t prior_notice_start_day_;
-  duration_t prior_notice_start_time_;
-  bitfield_idx_t bitfield_idx_;
+  uint8_t type_{MAXUINT8};
+  uint16_t prior_notice_duration_min_{0};
+  uint16_t prior_notice_duration_max_{0};
+  uint16_t prior_notice_last_day_{0};
+  duration_t prior_notice_last_time_{duration_t::zero()};
+  uint16_t prior_notice_start_day_{0};
+  duration_t prior_notice_start_time_{duration_t::zero()};
+  bitfield_idx_t bitfield_idx_{bitfield_idx_t::invalid()};
 };
 
 enum class clasz : std::uint8_t {

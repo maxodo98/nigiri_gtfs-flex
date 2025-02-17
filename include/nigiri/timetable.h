@@ -282,7 +282,51 @@ struct timetable {
           "trip_idx is invalid");
       return geometry_trip_idx_t::invalid();
     }
-    auto idx = geometry_trip_idx_t{window_times_.size()};
+
+    auto const id = geometry_trip_idx{trip_idx, geo_idx};
+    auto const gt_it = geometry_trip_idxs_.find(id);
+    if (gt_it == geometry_trip_idxs_.end()) {
+      auto const idx = geometry_trip_idx_t{window_times_.size()};
+      geometry_trip_idxs_.emplace(geometry_trip_idx{trip_idx, geo_idx}, idx);
+      pickup_types_.emplace_back(pickup_type);
+      dropoff_types_.emplace_back(dropoff_type);
+      window_times_.emplace_back(stop_windows);
+      pickup_booking_rules_.emplace_back(pickup_booking_rule_id);
+      dropoff_booking_rules_.emplace_back(dropoff_booking_rule_id);
+      geometry_idx_to_trip_idxs_[geo_idx].push_back(trip_idx);
+      trip_idx_to_geometry_idxs_[trip_idx].push_back(geo_idx);
+      return idx;
+    }
+    auto const idx = gt_it->second;
+    if (window_times_[idx] != stop_windows) {
+      log(log_lvl::error, "timetable.register_geometry_trip",
+          "Geometry-Trip (trip: {}, geo: {}) has two lines with different "
+          "windows",
+          gt_it->first.trip_idx_, gt_it->first.geometry_idx_);
+      return idx;
+    }
+    if (pickup_booking_rules_[idx] != pickup_booking_rule_id ||
+        dropoff_booking_rules_[idx] != dropoff_booking_rule_id) {
+      log(log_lvl::error, "timetable.register_geometry_trip",
+          "Geometry-Trip (trip: {}, geo: {}) has two lines with different "
+          "booking rules",
+          gt_it->first.trip_idx_, gt_it->first.geometry_idx_);
+      return idx;
+    }
+    if (pickup_types_[idx] == pickup_type ||
+        dropoff_types_[idx] == dropoff_type) {
+      log(log_lvl::error, "timetable.register_geometry_trip",
+          "Geometry-Trip (trip: {}, geo: {}) two identical lines",
+          gt_it->first.trip_idx_, gt_it->first.geometry_idx_);
+      return idx;
+    }
+    pickup_types_[idx] = pickup_types_[idx] == kUnavailableType
+                             ? pickup_type
+                             : pickup_types_[idx];
+    dropoff_types_[idx] = dropoff_types_[idx] == kUnavailableType
+                              ? dropoff_type
+                              : dropoff_types_[idx];
+    return idx;
     // auto idx = utl::get_or_create(
     //     geometry_trip_idxs_, geometry_trip_idx{trip_idx, geo_idx}, [&]() {
     //       auto next_idx = geometry_trip_idx_t{window_times_.size()};
@@ -294,28 +338,6 @@ struct timetable {
     //           std::vector<booking_rule_idx_t>{});
     //       return next_idx;
     //     });
-
-    geometry_trip_idxs_.emplace(geometry_trip_idx{trip_idx, geo_idx}, idx);
-    pickup_types_.emplace_back(pickup_type);
-    dropoff_types_.emplace_back(dropoff_type);
-    window_times_.emplace_back(stop_windows);
-    pickup_booking_rules_.emplace_back(pickup_booking_rule_id);
-    dropoff_booking_rules_.emplace_back(dropoff_booking_rule_id);
-
-    // Could be improved by implementing .erase function to base_vec and using
-    // std::unique afterwards
-    if (std::find(geometry_idx_to_trip_idxs_[geo_idx].begin(),
-                  geometry_idx_to_trip_idxs_[geo_idx].end(),
-                  trip_idx) == geometry_idx_to_trip_idxs_[geo_idx].end()) {
-      geometry_idx_to_trip_idxs_[geo_idx].push_back(trip_idx);
-    }
-
-    if (std::find(trip_idx_to_geometry_idxs_[trip_idx].begin(),
-                  trip_idx_to_geometry_idxs_[trip_idx].end(),
-                  geo_idx) == trip_idx_to_geometry_idxs_[trip_idx].end()) {
-      trip_idx_to_geometry_idxs_[trip_idx].push_back(geo_idx);
-    }
-    return idx;
   }
 
   // std::vector<std::uint32_t> get_geometry_trip_data_idxs(
@@ -740,10 +762,8 @@ struct timetable {
   vecvec<geometry_idx_t, trip_idx_t> geometry_idx_to_trip_idxs_;
   vecvec<trip_idx_t, geometry_idx_t> trip_idx_to_geometry_idxs_;
   cista::raw::rtree<geometry_idx_t> geometry_rtree_;
-  vecvec<geometry_idx_t, duration_t> geometry_duration_;
 
   // booking rules
-  hash_map<string, booking_rule_idx_t> booking_rule_id_to_idx;
   vector_map<booking_rule_idx_t, source_idx_t> booking_rule_src_;
   vector_map<booking_rule_idx_t, booking_rule> booking_rules_;
 

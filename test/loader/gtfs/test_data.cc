@@ -646,6 +646,345 @@ constexpr auto const example_rtree_location_geojson_content = R"(
   ]
 })";
 
+constexpr auto const example_loader_test_agency_content =
+    R"(agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email
+a_1,Deutsche Bahn,db.de,Europe/Berlin,de,,,
+a_2,Rhein-Main-Verkehrsbund,rmv.de,Europe/Berlin,de,,,
+)";
+
+constexpr auto const example_loader_test_booking_rule_content =
+    R"(booking_rule_id,booking_rule_name,booking_type,prior_notice_duration_min,prior_notice_duration_max,prior_notice_last_day,prior_notice_last_time,prior_notice_start_day,prior_notice_start_time,prior_notice_service_id,message,pickup_message,drop_off_message,phone_number,info_url,booking_url
+b_Arbeitswoche,Darmstadt Arbeitswoche,1,60,1440,,,,,,,,,,,
+b_Wochenende,Darmstadt Wochenende,1,30,120,,,,,,,,,,,
+b_Nord_Ein,Nord Einstieg,1,60,,,,,,,,,,,,
+b_Nord_Aus,Nord Ausstieg,1,90,,,,,,,,,,,,
+b_Ost,Ost,2,,,1,18:00:00,,,,,,,,,
+b_Süd,Süd,2,,,2,12:00:00,7,00:00:00,,,,,,,
+b_West_Vormittag,West Vormittags,1,60,,,,,,,,,,,,
+b_West_Nachmittag,West Nachmittags,1,20,,,,,,,,,,,,
+)";
+
+constexpr auto const example_loader_test_calendar_content =
+    R"(service_id,service_name,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+c_1,Arbeitswoche,1,1,1,1,1,0,0,20250101,20251231
+c_2,Wochenende,0,0,0,0,0,1,1,20250101,20251231
+c_3,Allgemein,1,1,1,1,1,1,1,20250101,20251231
+)";
+
+constexpr auto const example_loader_test_calendar_dates_content =
+    R"(service_id,date,exception_type
+c_1,20250101,2
+c_1,20250418,2
+c_1,20250421,2
+c_1,20250501,2
+c_1,20250529,2
+c_1,20250609,2
+c_1,20250619,2
+c_1,20251003,2
+c_1,20251225,2
+c_1,20251226,2
+c_2,20250101,1
+c_2,20250418,1
+c_2,20250421,1
+c_2,20250501,1
+c_2,20250529,1
+c_2,20250609,1
+c_2,20250619,1
+c_2,20251003,1
+c_2,20251225,1
+c_2,20251226,1
+c_3,20250101,2
+c_3,20250418,2
+c_3,20250421,2
+c_3,20250501,2
+c_3,20250529,2
+c_3,20250609,2
+c_3,20250619,2
+c_3,20251003,2
+c_3,20251225,2
+c_3,20251226,2
+c_3,20250703,2
+c_3,20250704,2
+c_3,20250705,2
+c_3,20250706,2
+c_3,20250707,2
+)";
+
+constexpr auto const example_loader_test_location_geojson_content = R"({
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "Nord",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              8.652484802610935,
+              49.88950826461542
+            ],
+            [
+              8.632531855280726,
+              49.874863308155824
+            ],
+            [
+              8.633456826348993,
+              49.87012261291535
+            ],
+            [
+              8.667680755875645,
+              49.871740746835144
+            ],
+            [
+              8.664157056567763,
+              49.88255530236867
+            ],
+            [
+              8.652484802610935,
+              49.88950826461542
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Ost",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              8.669980537584316,
+              49.879342215997035
+            ],
+            [
+              8.690065623638578,
+              49.86838499193017
+            ],
+            [
+              8.688450594787996,
+              49.858816677986475
+            ],
+            [
+              8.676558109624278,
+              49.856857353264274
+            ],
+            [
+              8.66717626021736,
+              49.861854893978304
+            ],
+            [
+              8.656252792363125,
+              49.86920828943974
+            ],
+            [
+              8.65457903519201,
+              49.874715504945975
+            ],
+            [
+              8.660393139049853,
+              49.8821520879108
+            ],
+            [
+              8.669980537584316,
+              49.879342215997035
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Süd",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              8.638377009844826,
+              49.85267109261012
+            ],
+            [
+              8.655907413900893,
+              49.85312547521351
+            ],
+            [
+              8.666786835513683,
+              49.86783380401884
+            ],
+            [
+              8.653183072305495,
+              49.87444825258534
+            ],
+            [
+              8.638176545376032,
+              49.872147294725785
+            ],
+            [
+              8.638377009844826,
+              49.85267109261012
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "West",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              8.615742026526112,
+              49.87558530573456
+            ],
+            [
+              8.61992641945426,
+              49.86178794375207
+            ],
+            [
+              8.657894279495252,
+              49.8626113537035
+            ],
+            [
+              8.670047037904022,
+              49.87572465292158
+            ],
+            [
+              8.65137143157277,
+              49.88381384194538
+            ],
+            [
+              8.615605883599105,
+              49.87575303841029
+            ],
+            [
+              8.615742026526112,
+              49.87558530573456
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Darmstadt",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              8.654200005936705,
+              49.89605856027628
+            ],
+            [
+              8.615821336359803,
+              49.87570244657914
+            ],
+            [
+              8.614919725647121,
+              49.846600119930265
+            ],
+            [
+              8.677517269409314,
+              49.84307687627821
+            ],
+            [
+              8.690268620916164,
+              49.86653618300896
+            ],
+            [
+              8.68576056735159,
+              49.88438253735107
+            ],
+            [
+              8.671141593654223,
+              49.88948621165312
+            ],
+            [
+              8.654200005936705,
+              49.89605856027628
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+})";
+
+constexpr auto const example_loader_test_routes_content =
+    R"(route_id,agency_id,route_short_name,route_long_name,route_type
+Darmstadt_nach_West,a_1,,Darmstadt nach West,715
+Nord_nach_Nord_und_Ost,a_1,,Nord nach Nord und Ost,715
+Ost_nach_Ost_und_Süd,a_1,,Ost nach Ost und Süd,715
+Süd_nach_Süd,a_1,,Süd nach Süd,715
+West_nach_Ost_und_Süd,a_1,,West nach Ost und Süd,715
+)";
+
+constexpr auto const example_loader_test_stops_content =
+    R"(stop_id,stop_code,stop_name,tts_stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,level_id,platform_code
+s_1,Code,Darmstadt Ostbahnhof,,,49.87441240201039,8.673522730953579,,,,,,0,,
+s_2,Code,Darmstadt HBF,,,49.872831594042964,8.628161540647596,,,,,,0,,
+s_3,Code,Darmstadt Südbahnhof,,,49.8529412214732,8.64680776859845,,,,,,0,,
+s_4,Code,Darmstadt Nordbahnhof,,,49.891010734582096,8.653007984390484,,,,,,0,,
+s_5,Code,Darmstadt Schloss,,,49.87292663386987,8.655741396888601,,,,,,0,,
+s_6,Code,Darmstadt Luisenplatz,,,49.87295387982826,8.652074395902673,,,,,,0,,
+s_7,Code,Darmstadt Jugendstilbad,,,49.872922544554115,8.663944746090607,,,,,,0,,
+s_8,Code,Darmstadt Lichtwiese,,,49.86090506822356,8.686989336713737,,,,,,0,,
+s_9,Code,TU-Darmstadt Stadtmitte,,,49.87467964052996,8.656740285924798,,,,,,0,,)";
+
+constexpr auto const example_loader_test_stop_times_content =
+    R"(trip_id,arrival_time,departure_time,stop_id,location_group_id,location_id,stop_sequence,start_pickup_drop_off_window,end_pickup_drop_off_window,pickup_booking_rule_id,drop_off_booking_rule_id,stop_headsign,pickup_type,drop_off_type
+dnw_Arbeitswoche_1,,,,,Darmstadt,,08:00:00,12:00:00,b_Arbeitswoche,b_Arbeitswoche,,2,1
+dnw_Arbeitswoche_1,,,,,West,,08:00:00,12:00:00,b_Arbeitswoche,b_Arbeitswoche,,1,2
+dnw_Arbeitswoche_2,,,,,Darmstadt,,13:00:00,20:00:00,b_Arbeitswoche,b_Arbeitswoche,,2,1
+dnw_Arbeitswoche_2,,,,,West,,13:00:00,20:00:00,b_Arbeitswoche,b_Arbeitswoche,,1,2
+dnw_Wochenende,,,,,Darmstadt,,10:00:00,18:00:00,b_Wochenende,b_Wochenende,,2,1
+dnw_Wochenende,,,,,West,,10:00:00,18:00:00,b_Wochenende,b_Wochenende,,1,2
+nnno_1,,,,,Nord,,12:00:00,16:00:00,b_Nord_Ein,b_Nord_Aus,,2,2
+nnno_1,,,,,Ost,,14:00:00,16:00:00,b_Nord_Ein,b_Nord_Aus,,1,2
+nnno_2,,,,,Nord,,09:00:00,18:00:00,b_Nord_Ein,b_Nord_Aus,,2,1
+nnno_2,,,,,Nord,,09:00:00,18:00:00,b_Nord_Ein,b_Nord_Aus,,1,2
+nnno_2,,,,,Ost,,09:00:00,18:00:00,,b_Nord_Aus,,1,2
+onos_1,,,,,Ost,,08:00:00,20:00:00,b_Ost,b_Ost,,2,1
+onos_1,,,,,Ost,,08:00:00,20:00:00,b_Ost,b_Ost,,1,2
+onos_1,,,,,Süd,,15:00:00,20:00:00,b_Ost,b_Ost,,1,2
+onos_2,,,,,Ost,,06:00:00,12:00:00,b_Ost,b_Ost,,2,1
+onos_2,,,,,Ost,,06:00:00,12:00:00,b_Ost,b_Ost,,1,2
+onos_2,,,,,Süd,,10:00:00,13:00:00,b_Ost,b_Ost,,1,2
+sns_1,,,,,Süd,,06:00:00,14:00:00,b_Süd,b_Süd,,2,1
+sns_1,,,,,Süd,,06:00:00,14:00:00,b_Süd,b_Süd,,1,2
+sns_2,,,,,Süd,,10:00:00,18:00:00,b_Ost,b_Ost,,2,1
+sns_2,,,,,Süd,,10:00:00,18:00:00,b_Ost,b_Ost,,1,2
+sns_3,,,,,Süd,,07:00:00,16:00:00,b_Süd,b_Süd,,2,1
+sns_3,,,,,Süd,,07:00:00,16:00:00,b_Süd,b_Süd,,1,2
+wnos_1,,,,,West,,08:00:00,12:00:00,b_West_Vormittag,b_West_Vormittag,,2,1
+wnos_1,,,,,Ost,,08:00:00,12:00:00,b_West_Vormittag,b_West_Vormittag,,1,2
+wnos_1,,,,,Süd,,08:00:00,12:00:00,b_West_Vormittag,b_West_Vormittag,,1,2
+wnos_2,,,,,West,,13:00:00,18:00:00,b_West_Nachmittag,b_West_Nachmittag,,2,1
+wnos_2,,,,,Ost,,13:00:00,18:00:00,b_West_Nachmittag,b_West_Nachmittag,,1,2
+wnos_2,,,,,Süd,,13:00:00,18:00:00,b_West_Nachmittag,b_West_Nachmittag,,1,2
+)";
+
+constexpr auto const example_loader_test_trips_content =
+    R"(route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id
+Darmstadt_nach_West,c_1,dnw_Arbeitswoche_1,,,,
+Darmstadt_nach_West,c_1,dnw_Arbeitswoche_2,,,,
+Darmstadt_nach_West,c_2,dnw_Wochenende,,,,
+Nord_nach_Nord_und_Ost,c_3,nnno_1,,,,
+Nord_nach_Nord_und_Ost,c_3,nnno_2,,,,
+Ost_nach_Ost_und_Süd,c_3,onos_1,,,,
+Ost_nach_Ost_und_Süd,c_3,onos_2,,,,
+Süd_nach_Süd,c_3,sns_1,,,,
+Süd_nach_Süd,c_3,sns_2,,,,
+Süd_nach_Süd,c_3,sns_3,,,,
+West_nach_Ost_und_Süd,c_3,wnos_1,,,,
+West_nach_Ost_und_Süd,c_3,wnos_2,,,,
+)";
+
 loader::mem_dir example_files() {
   using std::filesystem::path;
   return {
@@ -684,7 +1023,25 @@ loader::mem_dir example_files() {
        {{path{kLocationsWithinGeometriesStopFile}},
         std::string{example_locations_in_geometries_stops_file_content}},
        {{path{kLocationsWithinGeometriesGeojsonFile}},
-        std::string{example_locations_in_geometries_geojson_content}}}};
+        std::string{example_locations_in_geometries_geojson_content}},
+       {{path{kLoaderAgencyFile}},
+        std::string{example_loader_test_agency_content}},
+       {{path{kLoaderBookingRulesFile}},
+        std::string{example_loader_test_booking_rule_content}},
+       {{path{kLoaderCalendarFile}},
+        std::string{example_loader_test_calendar_content}},
+       {{path{kLoaderCalendarDatesFile}},
+        std::string{example_loader_test_calendar_dates_content}},
+       {{path{kLoaderLocationGeojsonFile}},
+        std::string{example_loader_test_location_geojson_content}},
+       {{path{kLoaderRoutesFile}},
+        std::string{example_loader_test_routes_content}},
+       {{path{kLoaderStopsFile}},
+        std::string{example_loader_test_stops_content}},
+       {{path{kLoaderStopTimesFile}},
+        std::string{example_loader_test_stop_times_content}},
+       {{path{kLoaderTripsFile}},
+        std::string{example_loader_test_trips_content}}}};
 }
 
 constexpr auto const berlin_agencies_file_content = std::string_view{

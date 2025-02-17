@@ -20,7 +20,7 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
 
   struct csv_booking_rule {
     utl::csv_col<utl::cstr, UTL_NAME("booking_rule_id")> id_;
-    utl::csv_col<std::uint16_t, UTL_NAME("booking_type")> type_;
+    utl::csv_col<utl::cstr, UTL_NAME("booking_type")> type_;
     utl::csv_col<std::uint16_t, UTL_NAME("prior_notice_duration_min")>
         prior_notice_duration_min_;
     utl::csv_col<std::uint16_t, UTL_NAME("prior_notice_duration_max")>
@@ -54,16 +54,21 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
                  "booking_rule_id is empty");
              return kEmptyPair;
            }
-
-           if (b.type_.val() != kRealTimeBooking &&
-               b.type_.val() != kSameDayBooking &&
-               b.type_.val() != kPriorDaysBooking) {
+           uint8_t type;
+           if (b.type_->empty()) {
+             log(log_lvl::error, "loader.gtfs.booking_rule",
+                 "booking_type is empty");
+             return kEmptyPair;
+           }
+           type = static_cast<uint8_t>(strtoul(b.type_->c_str(), nullptr, 10));
+           if (type != kRealTimeBooking && type != kSameDayBooking &&
+               type != kPriorDaysBooking) {
              log(log_lvl::error, "loader.gtfs.booking_rule",
                  "booking_type \"{}\" is unknown", b.type_.val());
              return kEmptyPair;
            }
 
-           switch (b.type_.val()) {
+           switch (type) {
              case kRealTimeBooking: break;
              case kSameDayBooking: {
                if (b.prior_notice_duration_min_.val() == 0) {
@@ -118,14 +123,16 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
                b.id_->to_str(),
                tt.register_booking_rule(
                    b.id_->to_str(),
-                   {.type_ = (uint8_t)b.type_.val(),
+                   {.type_ = type,
                     .prior_notice_duration_min_ =
                         b.prior_notice_duration_min_.val(),
                     .prior_notice_duration_max_ =
                         b.prior_notice_duration_max_.val(),
                     .prior_notice_last_day_ = b.prior_notice_last_day_.val(),
                     .prior_notice_last_time_ =
-                        hhmm_to_min(*b.prior_notice_last_time_),
+                        b.prior_notice_last_time_->empty()
+                            ? duration_t::zero()
+                            : hhmm_to_min(*b.prior_notice_last_time_),
                     .prior_notice_start_day_ =
                         b.prior_notice_start_day_->empty()
                             ? static_cast<std::uint16_t>(0)
@@ -133,7 +140,9 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
                                   strtoul(b.prior_notice_start_day_->c_str(),
                                           NULL, 10)),
                     .prior_notice_start_time_ =
-                        hhmm_to_min(*b.prior_notice_start_time_),
+                        b.prior_notice_start_time_->empty()
+                            ? duration_t::zero()
+                            : hhmm_to_min(*b.prior_notice_start_time_),
                     .bitfield_idx_ =
                         b.prior_notice_service_id_->empty() || error
                             ? bitfield_idx_t::invalid()

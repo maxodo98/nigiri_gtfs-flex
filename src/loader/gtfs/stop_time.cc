@@ -187,14 +187,13 @@ void read_stop_times(timetable& tt,
               static_cast<pickup_dropoff_type>(*s.pickup_type_),
               static_cast<pickup_dropoff_type>(*s.drop_off_type_), window_time,
               pickup_booking_rule_idx, dropoff_booking_rule_idx);
+          return;
         }
 
         try {
 
-          auto const arrival_time =
-              is_flex_trip ? duration_t{0} : hhmm_to_min(*s.arrival_time_);
-          auto const departure_time =
-              is_flex_trip ? duration_t{0} : hhmm_to_min(*s.departure_time_);
+          auto const arrival_time = hhmm_to_min(*s.arrival_time_);
+          auto const departure_time = hhmm_to_min(*s.departure_time_);
 
           auto const in_allowed = *s.pickup_type_ != kUnavailableType;
           auto const out_allowed = *s.drop_off_type_ != kUnavailableType;
