@@ -288,6 +288,16 @@ struct transport {
   day_idx_t day_{day_idx_t::invalid()};
 };
 
+constexpr auto const kFlexTransportModeIdOffset = 1000;
+
+struct flex_id {
+  location_idx_t start_;
+  location_idx_t dest_;
+  geometry_idx_t from_;
+  geometry_idx_t to_;
+  trip_id_idx_t trip_;
+};
+
 using i32_minutes = std::chrono::duration<std::int32_t, std::ratio<60>>;
 using i16_minutes = std::chrono::duration<std::int16_t, std::ratio<60>>;
 using u8_minutes = std::chrono::duration<std::uint8_t, std::ratio<60>>;

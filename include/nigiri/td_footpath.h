@@ -27,7 +27,7 @@ struct td_footpath {
 
 template <typename T>
 struct td_result {
-  duration_t duration_with_time_;
+  duration_t duration_with_waiting_time_;
   T offset_;
 };
 

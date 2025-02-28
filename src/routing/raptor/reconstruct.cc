@@ -132,13 +132,15 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
 }
 
 template <direction SearchDir, via_offset_t Vias>
-void reconstruct_journey_with_vias(timetable const& tt,
-                                   rt_timetable const* rtt,
-                                   query const& q,
-                                   raptor_state const& raptor_state,
-                                   journey& j,
-                                   date::sys_days const base,
-                                   day_idx_t const base_day_idx) {
+void reconstruct_journey_with_vias(
+    timetable const& tt,
+    rt_timetable const* rtt,
+    query const& q,
+    raptor_state const& raptor_state,
+    journey& j,
+    date::sys_days const base,
+    day_idx_t const base_day_idx,
+    std::vector<flex_id> const& flex_ids = std::vector<flex_id>{}) {
   constexpr auto const kFwd = SearchDir == direction::kForward;
   auto const dir = [&]<typename T>(T const a) {
     return static_cast<T>((kFwd ? 1 : -1) * a);
@@ -489,23 +491,51 @@ void reconstruct_journey_with_vias(timetable const& tt,
     return std::nullopt;
   };
 
+  auto const create_flex_leg =
+      [&](unsigned const k, location_idx_t const flex_start,
+          delta_t const curr_time, duration_t const duration, flex_id flex_data)
+      -> std::optional<std::pair<journey::leg, journey::leg>> {
+    auto const flex_leg =
+        journey::leg<flex_id>{kFwd, flex_start, flex_data.dest_, flex_data};
+
+    auto const transport_leg =
+        get_transport(k, flex_data.dest_, curr_time - dir(duration), false);
+
+    return std::pair{flex_leg, transport_leg};
+  };
+
   auto const find_dest_leg = [&](unsigned const k, location_idx_t const l,
                                  offset const dest_offset,
-                                 bool const td_footpath) {
+                                 bool const td_footpath, bool const is_flex) {
     auto ret = std::optional<std::pair<journey::leg, journey::leg>>{};
     auto const curr_time = round_times[k][to_idx(l)][v];
     for_each_meta(
         tt, location_match_mode::kIntermodal, dest_offset.target_,
         [&](location_idx_t const eq) {
-          auto intermodal_dest = check_fp(
-              k, l, curr_time, {eq, dest_offset.duration_}, false, td_footpath);
-          if (intermodal_dest.has_value()) {
-            trace_rc_intermodal_dest_match;
-            intermodal_dest->first.uses_ = offset{
-                eq, dest_offset.duration_, dest_offset.transport_mode_id_};
-            ret = std::move(intermodal_dest);
+          if (is_flex) {
+            auto const flex_idx =
+                dest_offset.transport_mode_id_ - kFlexTransportModeIdOffset;
+            if (flex_idx >= 0 && flex_idx < flex_ids.size()) {
+              auto intermodal_dest = create_flex_leg(
+                  k, l, curr_time, dest_offset.duration_, flex_ids[flex_idx]);
+              intermodal_dest->first.uses_ = offset{
+                  eq, dest_offset.duration_, dest_offset.transport_mode_id_};
+              ret = std::move(intermodal_dest);
+            } else {
+              trace_rc_intermodal_dest_mismatch;
+            }
           } else {
-            trace_rc_intermodal_dest_mismatch;
+            auto intermodal_dest =
+                check_fp(k, l, curr_time, {eq, dest_offset.duration_}, false,
+                         td_footpath);
+            if (intermodal_dest.has_value()) {
+              trace_rc_intermodal_dest_match;
+              intermodal_dest->first.uses_ = offset{
+                  eq, dest_offset.duration_, dest_offset.transport_mode_id_};
+              ret = std::move(intermodal_dest);
+            } else {
+              trace_rc_intermodal_dest_mismatch;
+            }
           }
         });
     return ret;
@@ -530,11 +560,19 @@ void reconstruct_journey_with_vias(timetable const& tt,
       }
 
       for (auto const& [from, td] : q.td_dest_) {
-        auto const d = get_td_duration<flip(SearchDir)>(
-            td, delta_to_unix(base, curr_time));
-        if (d.has_value()) {
-          auto const ret = find_dest_leg(
-              k, l, {from, *d, td.back().transport_mode_id_}, true);
+        auto const r =
+            get_td_result<flip(SearchDir), std::vector<td_offset>, td_offset>(
+                td, delta_to_unix(base, curr_time));
+        // auto const d = get_td_duration<flip(SearchDir)>(
+        //     td, delta_to_unix(base, curr_time));
+        if (r.has_value()) {
+          auto const is_flex =
+              r->offset_.transport_mode_id_ >= kFlexTransportModeIdOffset;
+
+          auto const ret = find_dest_leg(k, l,
+                                         {from, r->duration_with_waiting_time_,
+                                          td.back().transport_mode_id_},
+                                         !is_flex, is_flex);
           if (ret.has_value()) {
             return std::move(*ret);
           }
