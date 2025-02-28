@@ -91,14 +91,15 @@ TEST(gtfs, loader_test) {
 
         EXPECT_TRUE(tg_geom_covers(actual_tg_geo, expected_tg_geo));
         tg_geom_free(expected_tg_geo);
+
+        for (auto const location : expected_locations_within) {
+          auto const pos = tt.locations_.coordinates_[location];
+          EXPECT_TRUE(tg_geom_covers(
+              actual_tg_geo, tg_geom_new_point(tg_point{pos.lng_, pos.lat_})));
+        }
+
         tg_geom_free(actual_tg_geo);
 
-        // ASSERT_EQ(tt.geometry_locations_within_[geojsons.at(id)].size(),
-        //           expected_locations_within.size());
-        // for (auto i = 0; i < expected_locations_within.size(); ++i) {
-        //   EXPECT_EQ(tt.geometry_locations_within_[geojsons.at(id)][i],
-        //             expected_locations_within[i]);
-        // }
         ASSERT_EQ(tt.geometry_idx_to_trip_idxs_[geojsons.at(id)].size(),
                   expected_related_trips.size());
         for (auto i = 0; i < expected_related_trips.size(); ++i) {
@@ -235,7 +236,7 @@ TEST(gtfs, loader_test) {
                                 point{8.65137143157277, 49.88381384194538},
                                 point{8.615605883599105, 49.87575303841029},
                                 point{8.615742026526112, 49.87558530573456}}),
-      {s1, s2, s5, s6, s7, s9},
+      {s2, s5, s6, s7, s9},
       {dnw_Arbeitswoche_1, dnw_Arbeitswoche_2, dnw_Wochenende, wnos_1, wnos_2});
   test_location_geojson(
       "Darmstadt",

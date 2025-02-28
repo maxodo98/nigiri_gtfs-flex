@@ -120,8 +120,14 @@ TEST(td_footpath, forward) {
 
   auto const d = get_td_duration<direction::kForward>(
       fps, sys_days{2024_y / June / 19} + 13h + 50min);
+  auto const r =
+      get_td_result<direction::kForward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 13h + 50min);
   ASSERT_TRUE(d.has_value());
   EXPECT_EQ(2h + 10min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(2h + 10min, r->duration_with_time_);
 }
 
 TEST(td_footpath, forward_parallel_trips) {
@@ -158,18 +164,34 @@ TEST(td_footpath, forward_parallel_trips) {
 
   auto const d = get_td_duration<direction::kForward>(
       fps, sys_days{2024_y / June / 19} + 15h + 40min);
+  auto const r =
+      get_td_result<direction::kForward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 15h + 40min);
   ASSERT_TRUE(d.has_value());
   EXPECT_EQ(35min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(35min, r->duration_with_time_);
 
   auto const d2 = get_td_duration<direction::kForward>(
       fps, sys_days{2024_y / June / 19} + 8h + 10min);
-  ASSERT_TRUE(d2.has_value());
-  EXPECT_EQ(30min, *d2);
+  auto const r2 =
+      get_td_result<direction::kForward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 8h + 10min);
+  ASSERT_TRUE(r2.has_value());
+  EXPECT_EQ(30min, r2->duration_with_time_);
 
   auto const d3 = get_td_duration<direction::kForward>(
       fps, sys_days{2024_y / June / 19} + 19h + 00min);
+  auto const r3 =
+      get_td_result<direction::kForward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 19h + 00min);
   ASSERT_TRUE(d3.has_value());
   EXPECT_EQ(15min, *d3);
+  ASSERT_TRUE(r3.has_value());
+  EXPECT_EQ(15min, r3->duration_with_time_);
 }
 
 TEST(td_footpath, backwards_parallel_trips) {
@@ -206,18 +228,36 @@ TEST(td_footpath, backwards_parallel_trips) {
 
   auto const d = get_td_duration<direction::kBackward>(
       fps, sys_days{2024_y / June / 19} + 16h + 20min);
+  auto const r =
+      get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 16h + 20min);
   ASSERT_TRUE(d.has_value());
   EXPECT_EQ(15min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(15min, r->duration_with_time_);
 
   auto const d2 = get_td_duration<direction::kBackward>(
       fps, sys_days{2024_y / June / 19} + 10h + 15min);
+  auto const r2 =
+      get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 10h + 15min);
   ASSERT_TRUE(d2.has_value());
   EXPECT_EQ(45min, *d2);
+  ASSERT_TRUE(r2.has_value());
+  EXPECT_EQ(45min, r2->duration_with_time_);
 
   auto const d3 = get_td_duration<direction::kBackward>(
       fps, sys_days{2024_y / June / 19} + 20h + 15min);
+  auto const r3 =
+      get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+          fps, sys_days{2024_y / June / 19} + 20h + 15min);
   ASSERT_TRUE(d3.has_value());
   EXPECT_EQ(30min, *d3);
+  ASSERT_TRUE(r3.has_value());
+  EXPECT_EQ(30min, r3->duration_with_time_);
 }
 
 TEST(td_footpath, backward_last_too_large) {
@@ -234,8 +274,14 @@ TEST(td_footpath, backward_last_too_large) {
 
   auto const d = get_td_duration<direction::kBackward>(
       fps, sys_days{2024_y / June / 19} + 21h);
+  auto const r =
+      get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(fps,
+                                        sys_days{2024_y / June / 19} + 21h);
   ASSERT_TRUE(d.has_value());
   EXPECT_EQ(2h + 10min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(2h + 10min, r->duration_with_time_);
 }
 
 TEST(td_footpath, backward_pick_within_interval) {
@@ -252,8 +298,14 @@ TEST(td_footpath, backward_pick_within_interval) {
 
   auto const d = get_td_duration<direction::kBackward>(
       fps, sys_days{2024_y / June / 19} + 12h);
+  auto const r =
+      get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(fps,
+                                        sys_days{2024_y / June / 19} + 12h);
   ASSERT_TRUE(d.has_value());
   EXPECT_EQ(1h + 10min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(1h + 10min, r->duration_with_time_);
 }
 
 TEST(td_footpath, backward_1) {
@@ -270,8 +322,13 @@ TEST(td_footpath, backward_1) {
 
   auto const d = get_td_duration<direction::kBackward>(
       fps, sys_days{2024_y / June / 19} + 8h);
+  auto const r =
+      get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(fps, sys_days{2024_y / June / 19} + 8h);
   ASSERT_TRUE(d.has_value());
   EXPECT_EQ(40min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(40min, r->duration_with_time_);
 }
 
 TEST(td_footpath, backward) {

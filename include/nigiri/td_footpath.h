@@ -25,6 +25,86 @@ struct td_footpath {
   duration_t duration_;
 };
 
+template <typename T>
+struct td_result {
+  duration_t duration_with_time_;
+  T offset_;
+};
+
+template <direction SearchDir, typename Collection, typename T>
+std::optional<td_result<T>> get_td_result(Collection const& c,
+                                          unixtime_t const t) {
+  auto const r = to_range<SearchDir>(c);
+  auto const from = r.begin();
+  auto const to = r.end();
+
+  using Type = T;
+
+  if constexpr (SearchDir == direction::kForward) {
+    Type const* best = nullptr;
+    Type const* curr = nullptr;
+
+    auto const get = [&]() -> std::optional<td_result<T>> {
+      auto const start = std::max(best->valid_from_, t);
+      auto const target_time = start + best->duration_;
+      auto const duration_with_waiting = target_time - t;
+      if (duration_with_waiting < footpath::kMaxDuration) {
+        return td_result{duration_with_waiting, *best};
+      } else {
+        return std::nullopt;
+      }
+    };
+
+    for (auto it = from; it != to; ++it) {
+      if (curr == nullptr || curr->duration_ == footpath::kMaxDuration ||
+          it->valid_from_ < t + curr->duration_) {
+        curr = &*it;
+      } else if (best == nullptr || curr->duration_ < best->duration_) {
+        best = &*curr;
+      }
+    }
+
+    if (best == nullptr || curr->duration_ < best->duration_) {
+      best = &*curr;
+    }
+
+    if (best != nullptr && best->duration_ != footpath::kMaxDuration) {
+      return get();
+    }
+
+    return std::nullopt;
+  } else /* (SearchDir == direction::kBackward) */ {
+    Type const* best = nullptr;
+    auto dep = unixtime_t{};
+
+    if (from->duration_ != footpath::kMaxDuration &&
+        from->valid_from_ <= t - from->duration_) {
+      best = &*from;
+      dep = t - from->duration_;
+    }
+
+    using namespace std::chrono_literals;
+    for (auto const [a, b] : utl::pairwise(it_range{from, to})) {
+      if (b.duration_ != footpath::kMaxDuration &&
+          std::max(b.valid_from_, dep) + b.duration_ <= t &&
+          interval{b.valid_from_, a.valid_from_ + 1min}.overlaps(
+              interval{dep + 1min, t + 1min})) {
+        const auto new_dep = std::min(a.valid_from_, t) - b.duration_;
+        if (dep < new_dep) {
+          dep = new_dep;
+          best = &b;
+        }
+      }
+    }
+
+    if (best != nullptr && best->duration_ != footpath::kMaxDuration) {
+      return td_result<T>{t - dep, *best};
+    }
+
+    return std::nullopt;
+  }
+}
+
 template <direction SearchDir, typename Collection>
 std::optional<duration_t> get_td_duration(Collection const& c,
                                           unixtime_t const t) {
