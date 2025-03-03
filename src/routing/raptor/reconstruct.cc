@@ -493,15 +493,22 @@ void reconstruct_journey_with_vias(
 
   auto const create_flex_leg =
       [&](unsigned const k, location_idx_t const flex_start,
-          delta_t const curr_time, duration_t const duration, flex_id flex_data)
+          delta_t const curr_time, duration_t const duration,
+          flex_id const& flex_data)
       -> std::optional<std::pair<journey::leg, journey::leg>> {
-    auto const flex_leg =
-        journey::leg<flex_id>{kFwd, flex_start, flex_data.dest_, flex_data};
+    auto const flex_leg = journey::leg{
+        SearchDir,
+        flex_start,
+        flex_data.dest_,
+        delta_to_unix(base, curr_time),
+        delta_to_unix(base,
+                      static_cast<delta_t>(curr_time + dir(duration.count()))),
+        offset{flex_data.dest_, duration, transport_mode_id_t{0}}};
 
-    auto const transport_leg =
-        get_transport(k, flex_data.dest_, curr_time - dir(duration), false);
+    auto const transport_leg = get_transport(
+        k, flex_data.dest_, curr_time - dir(duration).count(), false);
 
-    return std::pair{flex_leg, transport_leg};
+    return std::pair{flex_leg, *transport_leg};
   };
 
   auto const find_dest_leg = [&](unsigned const k, location_idx_t const l,
@@ -553,7 +560,7 @@ void reconstruct_journey_with_vias(
         k == j.transfers_ + 1U) {
       trace_reconstruct("  CHECKING INTERMODAL DEST\n");
       for (auto const& dest_offset : q.destination_) {
-        auto const ret = find_dest_leg(k, l, dest_offset, false);
+        auto const ret = find_dest_leg(k, l, dest_offset, false, false);
         if (ret.has_value()) {
           return std::move(*ret);
         }
