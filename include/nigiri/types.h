@@ -354,14 +354,6 @@ struct booking_rule {
   bitfield_idx_t bitfield_idx_{bitfield_idx_t::invalid()};
 };
 
-struct flex_identification {
-  location_idx_t start_;
-  location_idx_t dest_;
-  geometry_idx_t geometry_from_;
-  geometry_idx_t geometry_to_;
-  trip_idx_t trip_;
-};
-
 enum class clasz : std::uint8_t {
   kAir = 0,
   kHighSpeed = 1,
