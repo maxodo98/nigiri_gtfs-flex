@@ -169,7 +169,8 @@ struct timetable {
     return matches;
   }
 
-  geometry_idx_t register_geometry(tg_geom const* geometry) {
+  geometry_idx_t register_geometry(std::string const& id,
+                                   tg_geom const* geometry) {
     auto const next_idx = geometry_idx_t{geometry_.size()};
     auto const type = tg_geom_typeof(geometry);
     tg_poly const* poly;
@@ -190,6 +191,7 @@ struct timetable {
             "Unknown tg_geometry type {}", static_cast<int>(type));
       }
     }
+    geometry_ids_.emplace_back(id);
     geometry_idx_to_trip_idxs_.emplace_back(std::vector<trip_idx_t>{});
     auto b = geo::box{};
     std::vector<point*> points;
@@ -757,6 +759,7 @@ struct timetable {
   vecvec<area_idx_t, location_idx_t> area_idx_to_location_idxs_;
 
   // location geojson
+  vecvec<geometry_idx_t, char> geometry_ids_;
   vector_map<geometry_idx_t, multipolgyon> geometry_;
   vecvec<geometry_idx_t, location_idx_t> geometry_locations_within_;
   vecvec<geometry_idx_t, trip_idx_t> geometry_idx_to_trip_idxs_;

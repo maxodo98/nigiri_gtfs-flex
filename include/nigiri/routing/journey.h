@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "nigiri/common/interval.h"
+#include "nigiri/flex.h"
 #include "nigiri/footpath.h"
 #include "nigiri/routing/query.h"
 #include "nigiri/rt/run.h"
@@ -50,7 +51,7 @@ struct journey {
 
     location_idx_t from_, to_;
     unixtime_t dep_time_, arr_time_;
-    std::variant<run_enter_exit, footpath, offset> uses_;
+    std::variant<run_enter_exit, footpath, offset, flex> uses_;
   };
 
   bool dominates(journey const& o) const {

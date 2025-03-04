@@ -58,7 +58,7 @@ location_geojson_map_t read_location_geojson(timetable& tt,
       continue;
     }
 
-    const auto idx = tt.register_geometry(geometry);
+    const auto idx = tt.register_geometry(id, geometry);
     location_geojson.emplace(id, idx);
   }
   return location_geojson;
