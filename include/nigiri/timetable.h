@@ -754,6 +754,7 @@ struct timetable {
   hash_map<string, profile_idx_t> profiles_;
 
   /* GTFS-Flex */
+  vector<flex_identification> flex_identifications_;
   // areas
   vecvec<area_idx_t, char> area_idx_to_area_id_;
   vecvec<area_idx_t, location_idx_t> area_idx_to_location_idxs_;
