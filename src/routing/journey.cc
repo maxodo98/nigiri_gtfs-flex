@@ -34,6 +34,11 @@ void journey::leg::print(std::ostream& out,
             indent(out, n_indent);
             out << "MUMO (id=" << x.transport_mode_id_
                 << ", duration=" << x.duration().count() << ")\n";
+          },
+          [&](flex const x) {
+            indent(out, n_indent);
+            out << "MUMO (id=" << x.transport_mode_id_
+                << ", duration=" << x.duration_.count() << ")\n";
           }},
       uses_);
 }
