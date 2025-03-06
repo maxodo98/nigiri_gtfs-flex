@@ -295,7 +295,7 @@ struct flex_id {
   location_idx_t dest_;
   geometry_idx_t from_;
   geometry_idx_t to_;
-  trip_id_idx_t trip_;
+  trip_idx_t trip_;
 };
 
 using i32_minutes = std::chrono::duration<std::int32_t, std::ratio<60>>;

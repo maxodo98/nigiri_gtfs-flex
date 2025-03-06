@@ -12,7 +12,6 @@ struct flex {
 };
 
 struct flex_identification {
-  location_idx_t start_;
   location_idx_t dest_;
   geometry_idx_t geometry_from_;
   geometry_idx_t geometry_to_;

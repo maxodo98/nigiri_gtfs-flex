@@ -92,6 +92,23 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
       if (duration.has_value() &&
           is_better_or_eq(j.start_time_,
                           leg_start_time - (kFwd ? 1 : -1) * *duration)) {
+        if (it->second.back().transport_mode_id_ >=
+            kFlexTransportModeIdOffset) {
+          auto const f_idx =
+              it->second.back().transport_mode_id_ - kFlexTransportModeIdOffset;
+          if (f_idx < 0 || f_idx >= flex_identifications.size()) {
+            return std::nullopt;
+          }
+          auto const f_data = flex_identifications[f_idx];
+          return journey::leg{SearchDir,
+                              get_special_station(special_station::kStart),
+                              leg_start_location,
+                              leg_start_time - (kFwd ? 1 : -1) * (*duration),
+                              leg_start_time,
+                              flex{leg_start_location, f_data.geometry_from_,
+                                   f_data.geometry_to_, *duration,
+                                   it->second.back().transport_mode_id_}};
+        }
         return journey::leg{SearchDir,
                             get_special_station(special_station::kStart),
                             leg_start_location,
@@ -132,15 +149,13 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
 }
 
 template <direction SearchDir, via_offset_t Vias>
-void reconstruct_journey_with_vias(
-    timetable const& tt,
-    rt_timetable const* rtt,
-    query const& q,
-    raptor_state const& raptor_state,
-    journey& j,
-    date::sys_days const base,
-    day_idx_t const base_day_idx,
-    std::vector<flex_id> const& flex_ids = std::vector<flex_id>{}) {
+void reconstruct_journey_with_vias(timetable const& tt,
+                                   rt_timetable const* rtt,
+                                   query const& q,
+                                   raptor_state const& raptor_state,
+                                   journey& j,
+                                   date::sys_days const base,
+                                   day_idx_t const base_day_idx) {
   constexpr auto const kFwd = SearchDir == direction::kForward;
   auto const dir = [&]<typename T>(T const a) {
     return static_cast<T>((kFwd ? 1 : -1) * a);
@@ -492,18 +507,29 @@ void reconstruct_journey_with_vias(
   };
 
   auto const create_flex_leg =
-      [&](unsigned const k, location_idx_t const flex_start,
-          delta_t const curr_time, duration_t const duration,
+      [&](unsigned const k, location_idx_t const from,
+          location_idx_t const dest, delta_t const curr_time,
+          duration_t const duration, transport_mode_id_t t_id,
           flex_id const& flex_data)
       -> std::optional<std::pair<journey::leg, journey::leg>> {
+    auto waiting_time = 0_minutes;
+    if (k == j.transfers_ + 1U) {
+      waiting_time = q.via_stops_[v].stay_;
+    }
     auto const flex_leg = journey::leg{
         SearchDir,
-        flex_start,
+        from,
         flex_data.dest_,
         delta_to_unix(base, curr_time),
         delta_to_unix(base,
-                      static_cast<delta_t>(curr_time + dir(duration.count()))),
-        offset{flex_data.dest_, duration, transport_mode_id_t{0}}};
+                      static_cast<delta_t>(curr_time + dir(duration.count()) +
+                                           dir(waiting_time.count()))),
+        flex{.target_ = dest,
+             .from_geometry_ = flex_data.from_,
+             .target_geometry_ = flex_data.to_,
+             .trip_ = flex_data.trip_,
+             .duration_ = duration + waiting_time,
+             .transport_mode_id_ = t_id}};
 
     auto const transport_leg = get_transport(
         k, flex_data.dest_, curr_time - dir(duration).count(), false);
@@ -522,11 +548,10 @@ void reconstruct_journey_with_vias(
           if (is_flex) {
             auto const flex_idx =
                 dest_offset.transport_mode_id_ - kFlexTransportModeIdOffset;
-            if (flex_idx >= 0 && flex_idx < flex_ids.size()) {
-              auto intermodal_dest = create_flex_leg(
-                  k, l, curr_time, dest_offset.duration_, flex_ids[flex_idx]);
-              intermodal_dest->first.uses_ = offset{
-                  eq, dest_offset.duration_, dest_offset.transport_mode_id_};
+            if (flex_idx >= 0 && flex_idx < flex_identifications.size()) {
+              auto intermodal_dest =
+                  create_flex_leg(k, l, eq, curr_time, dest_offset.duration_,
+                                  flex_identifications[flex_idx]);
               ret = std::move(intermodal_dest);
             } else {
               trace_rc_intermodal_dest_mismatch;
