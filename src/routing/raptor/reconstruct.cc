@@ -106,7 +106,7 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
                               leg_start_time - (kFwd ? 1 : -1) * (*duration),
                               leg_start_time,
                               flex{leg_start_location, f_data.geometry_from_,
-                                   f_data.geometry_to_, *duration,
+                                   f_data.geometry_to_, f_data.trip_, *duration,
                                    it->second.back().transport_mode_id_}};
         }
         return journey::leg{SearchDir,
@@ -510,7 +510,7 @@ void reconstruct_journey_with_vias(timetable const& tt,
       [&](unsigned const k, location_idx_t const from,
           location_idx_t const dest, delta_t const curr_time,
           duration_t const duration, transport_mode_id_t t_id,
-          flex_id const& flex_data)
+          flex_identification const& flex_data)
       -> std::optional<std::pair<journey::leg, journey::leg>> {
     auto waiting_time = 0_minutes;
     if (k == j.transfers_ + 1U) {
@@ -525,8 +525,8 @@ void reconstruct_journey_with_vias(timetable const& tt,
                       static_cast<delta_t>(curr_time + dir(duration.count()) +
                                            dir(waiting_time.count()))),
         flex{.target_ = dest,
-             .from_geometry_ = flex_data.from_,
-             .target_geometry_ = flex_data.to_,
+             .from_geometry_ = flex_data.geometry_from_,
+             .target_geometry_ = flex_data.geometry_to_,
              .trip_ = flex_data.trip_,
              .duration_ = duration + waiting_time,
              .transport_mode_id_ = t_id}};
@@ -551,6 +551,7 @@ void reconstruct_journey_with_vias(timetable const& tt,
             if (flex_idx >= 0 && flex_idx < flex_identifications.size()) {
               auto intermodal_dest =
                   create_flex_leg(k, l, eq, curr_time, dest_offset.duration_,
+                                  dest_offset.transport_mode_id_,
                                   flex_identifications[flex_idx]);
               ret = std::move(intermodal_dest);
             } else {
