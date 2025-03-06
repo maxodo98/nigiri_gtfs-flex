@@ -105,9 +105,14 @@ std::optional<td_result<T>> get_td_result(Collection const& c,
   }
 }
 
+struct duration_with_waiting {
+  duration_t duration_;
+  duration_t waiting_time_;
+};
+
 template <direction SearchDir, typename Collection>
-std::optional<duration_t> get_td_duration(Collection const& c,
-                                          unixtime_t const t) {
+std::optional<duration_with_waiting> get_td_duration_split(Collection const& c,
+                                                           unixtime_t const t) {
   auto const r = to_range<SearchDir>(c);
   auto const from = r.begin();
   auto const to = r.end();
@@ -118,12 +123,13 @@ std::optional<duration_t> get_td_duration(Collection const& c,
     Type const* pred = nullptr;
     Type const* curr = nullptr;
 
-    auto const get = [&]() -> std::optional<duration_t> {
+    auto const get = [&]() -> std::optional<duration_with_waiting> {
       auto const start = std::max(pred->valid_from_, t);
       auto const target_time = start + pred->duration_;
-      auto const duration_with_waiting = target_time - t;
-      if (duration_with_waiting < footpath::kMaxDuration) {
-        return duration_with_waiting;
+      auto const waiting_time = std::max(duration_t{start - t}, duration_t{0});
+      if (pred->duration_ + waiting_time < footpath::kMaxDuration) {
+        return std::optional(
+            duration_with_waiting{pred->duration_, waiting_time});
       } else {
         return std::nullopt;
       }
@@ -172,11 +178,24 @@ std::optional<duration_t> get_td_duration(Collection const& c,
     }
 
     if (pred != nullptr && pred->duration_ != footpath::kMaxDuration) {
-      return t - dep;
+      return std::optional(duration_with_waiting{
+          pred->duration_,
+          std::max(duration_t{t - (dep + pred->duration_)}, duration_t{0})});
     }
 
     return std::nullopt;
   }
+}
+
+template <direction SearchDir, typename Collection>
+std::optional<duration_t> get_td_duration(Collection const& c,
+                                          unixtime_t const t) {
+  auto const duration_with_waiting = get_td_duration_split<SearchDir>(c, t);
+  if (duration_with_waiting.has_value()) {
+    return duration_with_waiting->duration_ +
+           duration_with_waiting->waiting_time_;
+  }
+  return std::nullopt;
 }
 
 template <typename Collection>
