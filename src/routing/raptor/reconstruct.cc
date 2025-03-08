@@ -170,7 +170,8 @@ void reconstruct_journey_with_vias(timetable const& tt,
     return is_ontrip ? is_better_or_eq(a, b) : a == b;
   };
 
-  auto const round_times = raptor_state.get_round_times_end<Vias>();
+  auto const round_times_start = raptor_state.get_round_times_start<Vias>();
+  auto const round_times_end = raptor_state.get_round_times_end<Vias>();
 
   auto v = static_cast<via_offset_t>(q.via_stops_.size());
 
@@ -221,13 +222,13 @@ void reconstruct_journey_with_vias(timetable const& tt,
 
       auto const event_time = unix_to_delta(
           base, stp.time(kFwd ? event_type::kDep : event_type::kArr));
-      auto const round_time = round_times[k - 1][to_idx(l)][new_v];
+      auto const round_time_end = round_times_end[k - 1][to_idx(l)][new_v];
 
-      if (is_better_or_eq(round_time, event_time) ||
+      if (is_better_or_eq(round_time_end, event_time) ||
           // special case: first stop with meta stations
           (k == 1 && q.start_match_mode_ == location_match_mode::kEquivalent &&
            is_journey_start(tt, q, l) &&
-           start_matches(round_time, event_time))) {
+           start_matches(round_time_end, event_time))) {
         trace_rc_transport_entry_found;
         v = new_v;
         return journey::leg{
@@ -508,31 +509,29 @@ void reconstruct_journey_with_vias(timetable const& tt,
 
   auto const create_flex_leg =
       [&](unsigned const k, location_idx_t const from,
-          location_idx_t const dest, delta_t const curr_time,
-          duration_t const duration, transport_mode_id_t t_id,
-          flex_identification const& flex_data)
+          location_idx_t const dest, delta_t const last_arr_time,
+          delta_t const arr_time, duration_t const duration,
+          transport_mode_id_t t_id, flex_identification const& flex_data)
       -> std::optional<std::pair<journey::leg, journey::leg>> {
     auto waiting_time = 0_minutes;
     if (k == j.transfers_ + 1U) {
       waiting_time = q.via_stops_[v].stay_;
     }
-    auto const flex_leg = journey::leg{
-        SearchDir,
-        from,
-        flex_data.dest_,
-        delta_to_unix(base, curr_time),
-        delta_to_unix(base,
-                      static_cast<delta_t>(curr_time + dir(duration.count()) +
-                                           dir(waiting_time.count()))),
-        flex{.target_ = dest,
-             .from_geometry_ = flex_data.geometry_from_,
-             .target_geometry_ = flex_data.geometry_to_,
-             .trip_ = flex_data.trip_,
-             .duration_ = duration + waiting_time,
-             .transport_mode_id_ = t_id}};
+    auto const flex_leg =
+        journey::leg{SearchDir,
+                     from,
+                     flex_data.dest_,
+                     delta_to_unix(base, arr_time),
+                     delta_to_unix(base, last_arr_time),
+                     flex{.target_ = dest,
+                          .from_geometry_ = flex_data.geometry_from_,
+                          .target_geometry_ = flex_data.geometry_to_,
+                          .trip_ = flex_data.trip_,
+                          .duration_ = duration + waiting_time,
+                          .transport_mode_id_ = t_id}};
 
-    auto const transport_leg = get_transport(
-        k, flex_data.dest_, curr_time - dir(duration).count(), false);
+    auto const transport_leg =
+        get_transport(k, flex_data.dest_, last_arr_time, false);
 
     if (transport_leg.has_value()) {
       return std::pair{flex_leg, *transport_leg};
@@ -544,7 +543,8 @@ void reconstruct_journey_with_vias(timetable const& tt,
                                  offset const dest_offset,
                                  bool const td_footpath, bool const is_flex) {
     auto ret = std::optional<std::pair<journey::leg, journey::leg>>{};
-    auto const curr_time = round_times[k][to_idx(l)][v];
+    auto const last_arr_time = round_times_start[k][to_idx(l)][v];
+    auto const arr_time = round_times_end[k][to_idx(l)][v];
     for_each_meta(
         tt, location_match_mode::kIntermodal, dest_offset.target_,
         [&](location_idx_t const eq) {
@@ -552,17 +552,17 @@ void reconstruct_journey_with_vias(timetable const& tt,
             auto const flex_idx =
                 dest_offset.transport_mode_id_ - kFlexTransportModeIdOffset;
             if (flex_idx >= 0 && flex_idx < flex_identifications.size()) {
-              auto intermodal_dest =
-                  create_flex_leg(k, l, eq, curr_time, dest_offset.duration_,
-                                  dest_offset.transport_mode_id_,
-                                  flex_identifications[flex_idx]);
+              auto intermodal_dest = create_flex_leg(
+                  k, l, eq, last_arr_time, arr_time, dest_offset.duration_,
+                  dest_offset.transport_mode_id_,
+                  flex_identifications[flex_idx]);
               ret = std::move(intermodal_dest);
             } else {
               trace_rc_intermodal_dest_mismatch;
             }
           } else {
             auto intermodal_dest =
-                check_fp(k, l, curr_time, {eq, dest_offset.duration_}, false,
+                check_fp(k, l, arr_time, {eq, dest_offset.duration_}, false,
                          td_footpath);
             if (intermodal_dest.has_value()) {
               trace_rc_intermodal_dest_match;
@@ -581,7 +581,7 @@ void reconstruct_journey_with_vias(timetable const& tt,
   auto const get_legs =
       [&](unsigned const k,
           location_idx_t const l) -> std::pair<journey::leg, journey::leg> {
-    auto const curr_time = round_times[k][to_idx(l)][v];
+    auto const curr_time = round_times_end[k][to_idx(l)][v];
     trace_reconstruct("get_legs: k={}, v={}, l={}, curr_time={}\n", k, v,
                       location{tt, l}, delta_to_unix(base, curr_time));
 
