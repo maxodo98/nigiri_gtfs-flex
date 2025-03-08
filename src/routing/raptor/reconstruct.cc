@@ -65,7 +65,7 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
       kFwd ? tt.locations_.footpaths_in_[q.prf_idx_][leg_start_location]
            : tt.locations_.footpaths_out_[q.prf_idx_][leg_start_location];
   auto const j_start_time = unix_to_delta(base, j.start_time_);
-  auto const round_times = state.get_round_times<Vias>();
+  auto const round_times = state.get_round_times_end<Vias>();
   auto const fp_target_time = round_times[0][to_idx(leg_start_location)][0];
 
   if (q.start_match_mode_ == location_match_mode::kIntermodal) {
@@ -170,7 +170,7 @@ void reconstruct_journey_with_vias(timetable const& tt,
     return is_ontrip ? is_better_or_eq(a, b) : a == b;
   };
 
-  auto const round_times = raptor_state.get_round_times<Vias>();
+  auto const round_times = raptor_state.get_round_times_end<Vias>();
 
   auto v = static_cast<via_offset_t>(q.via_stops_.size());
 

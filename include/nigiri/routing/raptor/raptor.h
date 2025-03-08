@@ -98,7 +98,8 @@ struct raptor {
         state_{state.resize(n_locations_, n_routes_, n_rt_transports_)},
         tmp_{state_.get_tmp<Vias>()},
         best_{state_.get_best<Vias>()},
-        round_times_{state.get_round_times<Vias>()},
+        round_times_start_{state.get_round_times_start<Vias>()},
+        round_times_end_{state.get_round_times_end<Vias>()},
         is_dest_{is_dest},
         is_via_{is_via},
         dist_to_end_{dist_to_dest},
@@ -125,7 +126,8 @@ struct raptor {
 
   void reset_arrivals() {
     utl::fill(time_at_dest_, kInvalid);
-    round_times_.reset(kInvalidArray);
+    round_times_end_.reset(kInvalidArray);
+    round_times_start_.reset(kInvalidArray);
   }
 
   void next_start_time() {
@@ -139,11 +141,14 @@ struct raptor {
     }
   }
 
-  void add_start(location_idx_t const l, unixtime_t const t) {
+  void add_start(location_idx_t const l,
+                 unixtime_t const t_start,
+                 unixtime_t const t_end) {
     auto const v = (Vias != 0 && is_via_[0][to_idx(l)]) ? 1U : 0U;
     trace_upd("adding start {}: {}, v={}\n", location{tt_, l}, t, v);
-    best_[to_idx(l)][v] = unix_to_delta(base(), t);
-    round_times_[0U][to_idx(l)][v] = unix_to_delta(base(), t);
+    best_[to_idx(l)][v] = unix_to_delta(base(), t_end);
+    round_times_end_[0U][to_idx(l)][v] = unix_to_delta(base(), t_end);
+    round_times_start_[0U][to_idx(l)][v] = unix_to_delta(base(), t_start);
     state_.station_mark_.set(to_idx(l), true);
   }
 
@@ -164,7 +169,7 @@ struct raptor {
     for (auto k = 1U; k != end_k; ++k) {
       for (auto i = 0U; i != n_locations_; ++i) {
         for (auto v = 0U; v != Vias + 1; ++v) {
-          best_[i][v] = get_best(round_times_[k][i][v], best_[i][v]);
+          best_[i][v] = get_best(round_times_end_[k][i][v], best_[i][v]);
         }
       }
       is_dest_.for_each_set_bit([&](std::uint64_t const i) {
@@ -229,7 +234,7 @@ struct raptor {
 
     is_dest_.for_each_set_bit([&](auto const i) {
       for (auto k = 1U; k != end_k; ++k) {
-        auto const dest_time = round_times_[k][i][Vias];
+        auto const dest_time = round_times_end_[k][i][Vias];
         if (dest_time != kInvalid) {
           trace("ADDING JOURNEY: start={}, dest={} @ {}, transfers={}\n",
                 start_time, delta_to_unix(base(), round_times_[k][i][Vias]),
@@ -373,7 +378,8 @@ private:
           }
 
           ++stats_.n_earliest_arrival_updated_by_footpath_;
-          round_times_[k][i][target_v] = fp_target_time;
+          round_times_end_[k][i][target_v] = fp_target_time;
+          round_times_start_[k][i][target_v] = tmp_time;
           best_[i][target_v] = fp_target_time;
           state_.station_mark_.set(i, true);
           if (is_dest) {
@@ -458,7 +464,8 @@ private:
                 to_unix(fp_target_time), v, target_v, stay);
 
             ++stats_.n_earliest_arrival_updated_by_footpath_;
-            round_times_[k][target][target_v] = fp_target_time;
+            round_times_end_[k][target][target_v] = fp_target_time;
+            round_times_start_[k][target][target_v] = tmp_time;
             best_[target][target_v] = fp_target_time;
             state_.station_mark_.set(target, true);
             if (target_v == Vias && is_dest_[target]) {
@@ -556,7 +563,8 @@ private:
                 target_v, stay);
 
             ++stats_.n_earliest_arrival_updated_by_footpath_;
-            round_times_[k][target][target_v] = fp_target_time;
+            round_times_end_[k][target][target_v] = fp_target_time;
+            round_times_start_[k][target][target_v] = tmp_time;
             best_[target][target_v] = fp_target_time;
             state_.station_mark_.set(target, true);
             if (is_dest_[target]) {
@@ -599,7 +607,8 @@ private:
               clamp(best_time + stay.count() + dir(dist_to_end_[i]));
 
           if (is_better(end_time, best_[kIntermodalTarget][Vias])) {
-            round_times_[k][kIntermodalTarget][Vias] = end_time;
+            round_times_end_[k][kIntermodalTarget][Vias] = end_time;
+            round_times_start_[k][kIntermodalTarget][Vias] = best_time;
             best_[kIntermodalTarget][Vias] = end_time;
             update_time_at_dest(k, end_time);
           }
@@ -618,7 +627,8 @@ private:
             auto const end_time = clamp(fp_start_time + dir(duration->count()));
 
             if (is_better(end_time, best_[kIntermodalTarget][Vias])) {
-              round_times_[k][kIntermodalTarget][Vias] = end_time;
+              round_times_end_[k][kIntermodalTarget][Vias] = end_time;
+              round_times_start_[k][kIntermodalTarget][Vias] = fp_start_time;
               best_[kIntermodalTarget][Vias] = end_time;
               update_time_at_dest(k, end_time);
             }
@@ -682,14 +692,14 @@ private:
             }
 
             auto current_best =
-                get_best(round_times_[k - 1][l_idx][target_v],
+                get_best(round_times_end_[k - 1][l_idx][target_v],
                          tmp_[l_idx][target_v], best_[l_idx][target_v]);
 
             auto higher_v_best = kInvalid;
             for (auto higher_v = Vias; higher_v != target_v; --higher_v) {
-              higher_v_best =
-                  get_best(higher_v_best, round_times_[k - 1][l_idx][higher_v],
-                           tmp_[l_idx][higher_v], best_[l_idx][higher_v]);
+              higher_v_best = get_best(
+                  higher_v_best, round_times_end_[k - 1][l_idx][higher_v],
+                  tmp_[l_idx][higher_v], best_[l_idx][higher_v]);
             }
 
             if (is_better(by_transport, current_best) &&
@@ -718,7 +728,7 @@ private:
               auto const dest_v = target_v + 1;
               assert(dest_v == Vias);
               auto const best_dest =
-                  get_best(round_times_[k - 1][l_idx][dest_v],
+                  get_best(round_times_end_[k - 1][l_idx][dest_v],
                            tmp_[l_idx][dest_v], best_[l_idx][dest_v]);
 
               if (is_better(by_transport, best_dest) &&
@@ -760,7 +770,7 @@ private:
           rt_t, stop_idx, kFwd ? event_type::kDep : event_type::kArr);
       for (auto v = 0U; v != Vias + 1; ++v) {
         auto const target_v = v + v_offset[v];
-        auto const prev_round_time = round_times_[k - 1][l_idx][target_v];
+        auto const prev_round_time = round_times_end_[k - 1][l_idx][target_v];
         if (is_better_or_eq(prev_round_time, by_transport)) {
           et[v] = true;
           v_offset[v] = 0;
@@ -851,14 +861,14 @@ private:
           }
 
           current_best[v] =
-              get_best(round_times_[k - 1][l_idx][target_v],
+              get_best(round_times_end_[k - 1][l_idx][target_v],
                        tmp_[l_idx][target_v], best_[l_idx][target_v]);
 
           auto higher_v_best = kInvalid;
           for (auto higher_v = Vias; higher_v != target_v; --higher_v) {
-            higher_v_best =
-                get_best(higher_v_best, round_times_[k - 1][l_idx][higher_v],
-                         tmp_[l_idx][higher_v], best_[l_idx][higher_v]);
+            higher_v_best = get_best(
+                higher_v_best, round_times_end_[k - 1][l_idx][higher_v],
+                tmp_[l_idx][higher_v], best_[l_idx][higher_v]);
           }
 
           assert(by_transport != std::numeric_limits<delta_t>::min() &&
@@ -919,7 +929,7 @@ private:
             auto const dest_v = target_v + 1;
             assert(dest_v == Vias);
             auto const best_dest =
-                get_best(round_times_[k - 1][l_idx][dest_v],
+                get_best(round_times_end_[k - 1][l_idx][dest_v],
                          tmp_[l_idx][dest_v], best_[l_idx][dest_v]);
 
             if (is_better(by_transport, best_dest) &&
@@ -971,7 +981,7 @@ private:
                 ? time_at_stop(r, et[v], stop_idx,
                                kFwd ? event_type::kDep : event_type::kArr)
                 : kInvalid;
-        auto const prev_round_time = round_times_[k - 1][l_idx][target_v];
+        auto const prev_round_time = round_times_end_[k - 1][l_idx][target_v];
         if (prev_round_time != kInvalid &&
             is_better_or_eq(prev_round_time, et_time_at_stop)) {
           auto const [day, mam] = split(prev_round_time);
@@ -1162,7 +1172,8 @@ private:
   raptor_state& state_;
   std::span<std::array<delta_t, Vias + 1>> tmp_;
   std::span<std::array<delta_t, Vias + 1>> best_;
-  flat_matrix_view<std::array<delta_t, Vias + 1>> round_times_;
+  flat_matrix_view<std::array<delta_t, Vias + 1>> round_times_start_;
+  flat_matrix_view<std::array<delta_t, Vias + 1>> round_times_end_;
   bitvec const& is_dest_;
   std::array<bitvec, kMaxVias> const& is_via_;
   std::vector<std::uint16_t> const& dist_to_end_;

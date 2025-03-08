@@ -17,8 +17,10 @@ raptor_state& raptor_state::resize(unsigned const n_locations,
   n_locations_ = n_locations;
   tmp_storage_.resize(n_locations * (kMaxVias + 1));
   best_storage_.resize(n_locations * (kMaxVias + 1));
-  round_times_storage_.resize(n_locations * (kMaxVias + 1) *
-                              (kMaxTransfers + 1));
+  round_times_start_storage_.resize(n_locations * (kMaxVias + 1) *
+                                    (kMaxTransfers + 1));
+  round_times_end_storage_.resize(n_locations * (kMaxVias + 1) *
+                                  (kMaxTransfers + 1));
   station_mark_.resize(n_locations);
   prev_station_mark_.resize(n_locations);
   route_mark_.resize(n_routes);
@@ -36,7 +38,7 @@ void raptor_state::print(timetable const& tt,
 
   auto const& tmp = get_tmp<Vias>();
   auto const& best = get_best<Vias>();
-  auto const& round_times = get_round_times<Vias>();
+  auto const& round_times = get_round_times_end<Vias>();
 
   auto const has_empty_rounds = [&](std::uint32_t const l) {
     for (auto k = 0U; k != kMaxTransfers + 1U; ++k) {
