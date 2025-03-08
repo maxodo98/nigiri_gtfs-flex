@@ -513,10 +513,6 @@ void reconstruct_journey_with_vias(timetable const& tt,
           delta_t const arr_time, duration_t const duration,
           transport_mode_id_t t_id, flex_identification const& flex_data)
       -> std::optional<std::pair<journey::leg, journey::leg>> {
-    auto waiting_time = 0_minutes;
-    if (k == j.transfers_ + 1U) {
-      waiting_time = q.via_stops_[v].stay_;
-    }
     auto const flex_leg =
         journey::leg{SearchDir,
                      from,
@@ -527,7 +523,7 @@ void reconstruct_journey_with_vias(timetable const& tt,
                           .from_geometry_ = flex_data.geometry_from_,
                           .target_geometry_ = flex_data.geometry_to_,
                           .trip_ = flex_data.trip_,
-                          .duration_ = duration + waiting_time,
+                          .duration_ = duration,
                           .transport_mode_id_ = t_id}};
 
     auto const transport_leg =
@@ -553,8 +549,8 @@ void reconstruct_journey_with_vias(timetable const& tt,
                 dest_offset.transport_mode_id_ - kFlexTransportModeIdOffset;
             if (flex_idx >= 0 && flex_idx < flex_identifications.size()) {
               auto intermodal_dest = create_flex_leg(
-                  k, l, eq, last_arr_time, arr_time, dest_offset.duration_,
-                  dest_offset.transport_mode_id_,
+                  k, l, eq, last_arr_time, arr_time,
+                  dir(arr_time - last_arr_time), dest_offset.transport_mode_id_,
                   flex_identifications[flex_idx]);
               ret = std::move(intermodal_dest);
             } else {
