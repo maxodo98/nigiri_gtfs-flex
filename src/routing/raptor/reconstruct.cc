@@ -534,7 +534,10 @@ void reconstruct_journey_with_vias(timetable const& tt,
     auto const transport_leg = get_transport(
         k, flex_data.dest_, curr_time - dir(duration).count(), false);
 
-    return std::pair{flex_leg, *transport_leg};
+    if (transport_leg.has_value()) {
+      return std::pair { flex_leg, *transport_leg }
+    }
+    return std::nullopt;
   };
 
   auto const find_dest_leg = [&](unsigned const k, location_idx_t const l,
