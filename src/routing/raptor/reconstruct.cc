@@ -544,10 +544,11 @@ void reconstruct_journey_with_vias(timetable const& tt,
             auto const flex_idx =
                 dest_offset.transport_mode_id_ - kFlexTransportModeIdOffset;
             if (flex_idx >= 0 && flex_idx < flex_identifications.size()) {
-              auto intermodal_dest = create_flex_leg(
-                  k, l, eq, last_arr_time, arr_time,
-                  dir(arr_time - last_arr_time), dest_offset.transport_mode_id_,
-                  flex_identifications[flex_idx]);
+              auto intermodal_dest =
+                  create_flex_leg(k, l, last_arr_time, arr_time,
+                                  duration_t{dir(arr_time - last_arr_time)},
+                                  dest_offset.transport_mode_id_,
+                                  flex_identifications[flex_idx]);
               ret = std::move(intermodal_dest);
             } else {
               trace_rc_intermodal_dest_mismatch;
