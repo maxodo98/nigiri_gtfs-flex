@@ -508,23 +508,19 @@ void reconstruct_journey_with_vias(timetable const& tt,
   };
 
   auto const create_flex_leg =
-      [&](unsigned const k, location_idx_t const from,
-          location_idx_t const dest, delta_t const last_arr_time,
-          delta_t const arr_time, duration_t const duration,
-          transport_mode_id_t t_id, flex_identification const& flex_data)
+      [&](unsigned const k, location_idx_t const dest,
+          delta_t const last_arr_time, delta_t const arr_time,
+          duration_t const duration, transport_mode_id_t t_id,
+          flex_identification const& flex_data)
       -> std::optional<std::pair<journey::leg, journey::leg>> {
-    auto const flex_leg =
-        journey::leg{SearchDir,
-                     from,
-                     flex_data.dest_,
-                     delta_to_unix(base, arr_time),
-                     delta_to_unix(base, last_arr_time),
-                     flex{.target_ = dest,
-                          .from_geometry_ = flex_data.geometry_from_,
-                          .target_geometry_ = flex_data.geometry_to_,
-                          .trip_ = flex_data.trip_,
-                          .duration_ = duration,
-                          .transport_mode_id_ = t_id}};
+    auto const flex_leg = journey::leg{
+        SearchDir,
+        flex_data.dest_,
+        dest,
+        delta_to_unix(base, arr_time),
+        delta_to_unix(base, last_arr_time),
+        flex{flex_data.dest_, flex_data.geometry_from_, flex_data.geometry_to_,
+             flex_data.trip_, duration, t_id}};
 
     auto const transport_leg =
         get_transport(k, flex_data.dest_, last_arr_time, false);
