@@ -517,8 +517,8 @@ void reconstruct_journey_with_vias(timetable const& tt,
         SearchDir,
         flex_data.dest_,
         dest,
-        delta_to_unix(base, arr_time),
         delta_to_unix(base, last_arr_time),
+        delta_to_unix(base, arr_time),
         flex{flex_data.dest_, flex_data.geometry_from_, flex_data.geometry_to_,
              flex_data.trip_, duration, t_id}};
 
