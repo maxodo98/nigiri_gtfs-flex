@@ -184,6 +184,13 @@ bool multipolgyon::intersects(geo::box const& b) const {
   return result;
 }
 
+bool multipolgyon::contains(geo::latlng const& p) const {
+  auto m = create_tg_multipoly(*this);
+  bool const result = tg_geom_intersects_xy(m, p.lng_, p.lat_);
+  tg_geom_free(m);
+  return result;
+}
+
 geo::box multipolgyon::bounding_box() {
   std::vector<point*> points{};
   as_points(points);

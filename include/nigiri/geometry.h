@@ -102,6 +102,8 @@ struct multipolgyon {
 
   tg_geom* to_tg_geom();
 
+  bool contains(geo::latlng const& p) const;
+
   bool intersects(geo::box const& b) const;
 
   geo::box bounding_box();
