@@ -130,12 +130,16 @@ void read_stop_times(timetable& tt,
         }
 
         if (is_flex_trip) {
-          if (s.location_geojson_id_->empty()) {
+          std::string id;
+          if (!s.location_geojson_id_->empty()) {
+            id = s.location_geojson_id_->to_str();
+          } else if (!s.stop_id_->empty()) {
+            id = s.stop_id_->to_str();
+          } else {
             log(log_lvl::error, "loader.gtfs.stop_time",
-                "location_id is empty");
+                "location_id and stop_id is empty");
             return;
           }
-          auto const id = s.location_geojson_id_->to_str();
           auto const g_it = geojsons.find(id);
           if (g_it == end(geojsons)) {
             log(log_lvl::error, "loader.gtfs.stop_time",
