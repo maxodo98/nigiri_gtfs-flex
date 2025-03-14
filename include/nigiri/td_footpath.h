@@ -43,6 +43,7 @@ std::optional<td_result<T>> get_td_result(Collection const& c,
   if constexpr (SearchDir == direction::kForward) {
     Type const* best = nullptr;
     Type const* curr = nullptr;
+    auto arr = unixtime_t::max();
 
     auto const get = [&]() -> std::optional<td_result<T>> {
       auto const start = std::max(best->valid_from_, t);
@@ -59,13 +60,22 @@ std::optional<td_result<T>> get_td_result(Collection const& c,
       if (curr == nullptr || curr->duration_ == footpath::kMaxDuration ||
           it->valid_from_ < t + curr->duration_) {
         curr = &*it;
-      } else if (best == nullptr || curr->duration_ < best->duration_) {
-        best = &*curr;
+      } else {
+        auto const new_arr = std::max(t, curr->valid_from_) + curr->duration_;
+        if (best == nullptr || new_arr < arr) {
+          best = &*curr;
+          arr = new_arr;
+        }
+        curr = nullptr;
       }
     }
 
-    if (best == nullptr || curr->duration_ < best->duration_) {
-      best = &*curr;
+    if (curr != nullptr) {
+      auto const new_arr = std::max(t, curr->valid_from_) + curr->duration_;
+      if (best == nullptr || new_arr < arr) {
+        best = &*curr;
+        arr = new_arr;
+      }
     }
 
     if (best != nullptr && best->duration_ != footpath::kMaxDuration) {
@@ -120,46 +130,55 @@ std::optional<duration_with_waiting> get_td_duration_split(Collection const& c,
   using Type = std::decay_t<decltype(*from)>;
 
   if constexpr (SearchDir == direction::kForward) {
-    Type const* pred = nullptr;
+    Type const* best = nullptr;
     Type const* curr = nullptr;
+    auto arr = unixtime_t::max();
 
     auto const get = [&]() -> std::optional<duration_with_waiting> {
-      auto const start = std::max(pred->valid_from_, t);
-      auto const target_time = start + pred->duration_;
+      auto const start = std::max(best->valid_from_, t);
+      auto const target_time = start + best->duration_;
       auto const waiting_time = std::max(duration_t{start - t}, duration_t{0});
-      if (pred->duration_ + waiting_time < footpath::kMaxDuration) {
+      if (best->duration_ + waiting_time < footpath::kMaxDuration) {
         return std::optional(
-            duration_with_waiting{pred->duration_, waiting_time});
-      } else {
-        return std::nullopt;
+            duration_with_waiting{best->duration_, waiting_time});
       }
+      return std::nullopt;
     };
 
     for (auto it = from; it != to; ++it) {
       if (curr == nullptr || curr->duration_ == footpath::kMaxDuration ||
           it->valid_from_ < t + curr->duration_) {
         curr = &*it;
-      } else if (pred == nullptr || curr->duration_ < pred->duration_) {
-        pred = &*curr;
+      } else {
+        auto const new_arr = std::max(t, curr->valid_from_) + curr->duration_;
+        if (best == nullptr || new_arr < arr) {
+          best = &*curr;
+          arr = new_arr;
+        }
+        curr = nullptr;
       }
     }
 
-    if (pred == nullptr || curr->duration_ < pred->duration_) {
-      pred = &*curr;
+    if (curr != nullptr) {
+      auto const new_arr = std::max(t, curr->valid_from_) + curr->duration_;
+      if (best == nullptr || new_arr < arr) {
+        best = &*curr;
+        arr = new_arr;
+      }
     }
 
-    if (pred != nullptr && pred->duration_ != footpath::kMaxDuration) {
+    if (best != nullptr && best->duration_ != footpath::kMaxDuration) {
       return get();
     }
 
     return std::nullopt;
   } else /* (SearchDir == direction::kBackward) */ {
-    Type const* pred = nullptr;
+    Type const* best = nullptr;
     auto dep = unixtime_t{};
 
     if (from->duration_ != footpath::kMaxDuration &&
         from->valid_from_ <= t - from->duration_) {
-      pred = &*from;
+      best = &*from;
       dep = t - from->duration_;
     }
 
@@ -172,15 +191,15 @@ std::optional<duration_with_waiting> get_td_duration_split(Collection const& c,
         const auto new_dep = std::min(a.valid_from_, t) - b.duration_;
         if (dep < new_dep) {
           dep = new_dep;
-          pred = &b;
+          best = &b;
         }
       }
     }
 
-    if (pred != nullptr && pred->duration_ != footpath::kMaxDuration) {
+    if (best != nullptr && best->duration_ != footpath::kMaxDuration) {
       return std::optional(duration_with_waiting{
-          pred->duration_,
-          std::max(duration_t{t - (dep + pred->duration_)}, duration_t{0})});
+          best->duration_,
+          std::max(duration_t{t - (dep + best->duration_)}, duration_t{0})});
     }
 
     return std::nullopt;

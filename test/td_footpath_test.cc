@@ -130,6 +130,54 @@ TEST(td_footpath, forward) {
   EXPECT_EQ(2h + 10min, r->duration_with_waiting_time_);
 }
 
+TEST(td_footpath, edge_cases) {
+  auto fps = std::vector<routing::td_offset>{
+      {.valid_from_ = sys_days{2024_y / January / 01} + 8h + 00min,
+       .duration_ = 60min,
+       .transport_mode_id_ = 0},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 18h + 00min,
+       .duration_ = footpath::kMaxDuration,
+       .transport_mode_id_ = 0},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 15h + 20min,
+       .duration_ = 20min,
+       .transport_mode_id_ = 1},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 20h + 00min,
+       .duration_ = footpath::kMaxDuration,
+       .transport_mode_id_ = 1}};
+
+  auto d = get_td_duration<direction::kForward>(
+      fps, sys_days{2024_y / January / 01} + 14h + 30min);
+  auto r = get_td_result<direction::kForward, std::vector<routing::td_offset>,
+                         routing::td_offset>(
+      fps, sys_days{2024_y / January / 01} + 14h + 30min);
+  ASSERT_TRUE(d.has_value());
+  EXPECT_EQ(1h, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(1h, r->duration_with_waiting_time_);
+
+  fps = std::vector<routing::td_offset>{
+      {.valid_from_ = sys_days{2024_y / January / 01} + 8h + 00min,
+       .duration_ = 60min,
+       .transport_mode_id_ = 0},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 18h + 00min,
+       .duration_ = footpath::kMaxDuration,
+       .transport_mode_id_ = 0},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 15h + 20min,
+       .duration_ = 20min,
+       .transport_mode_id_ = 1},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 20h + 00min,
+       .duration_ = footpath::kMaxDuration,
+       .transport_mode_id_ = 1}};
+
+  d = get_td_duration<direction::kForward>(
+      fps, sys_days{2024_y / January / 01} + 21h + 0min);
+  r = get_td_result<direction::kForward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+      fps, sys_days{2024_y / January / 01} + 21h + 0min);
+  EXPECT_FALSE(d.has_value());
+  EXPECT_FALSE(r.has_value());
+}
+
 TEST(td_footpath, forward_parallel_trips) {
   auto const fps = std::vector<routing::td_offset>{
       {.valid_from_ = sys_days{1970_y / January / 1},
