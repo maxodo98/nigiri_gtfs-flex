@@ -26,6 +26,8 @@ constexpr auto const kLocationGroupStopsFile =
 constexpr auto const kBookingRulesFile = std::string_view{"booking_rules.txt"};
 constexpr auto const kLocationGeojsonFile =
     std::string_view{"location.geojson"};
+constexpr auto const kLocationsGeojsonFile =
+    std::string_view{"locations.geojson"};
 constexpr auto const kAreasFile = std::string_view{"areas.txt"};
 constexpr auto const kStopAreasFile = std::string_view{"stop_areas.txt"};
 

@@ -156,14 +156,21 @@ void load_timetable(loader_config const& config,
       read_booking_rules(service, tt, load(kBookingRulesFile).data());
 
   read_frequencies(trip_data, load(kFrequenciesFile).data());
-  const auto geojsons =
+  const auto geojson_name_1 =
       read_location_geojson(tt, load(kLocationGeojsonFile).data());
-  auto areas = read_areas(tt, stops, load(kStopAreasFile).data(),
-                          load(kLocationGroupsFile).data(),
-                          load(kLocationGroupStopsFile).data());
+  const auto geojson_name_2 =
+      read_location_geojson(tt, load(kLocationsGeojsonFile).data());
 
-  read_stop_times(tt, src, trip_data, geojsons, stops, booking_rules,
-                  load(kStopTimesFile).data(), shapes_data != nullptr);
+  auto geojsons = hash_map<std::string, geometry_idx_t>{};
+  geojsons.insert(geojson_name_1.begin(), geojson_name_1.end());
+  geojsons.insert(geojson_name_2.begin(), geojson_name_2.end());
+
+  auto const source_file_idx =
+      tt.register_source_file((d.path() / kStopTimesFile).generic_string());
+
+  read_stop_times(tt, src, source_file_idx, trip_data, geojsons, stops,
+                  booking_rules, load(kStopTimesFile).data(),
+                  shapes_data != nullptr);
 
   {
     auto const timer = scoped_timer{"loader.gtfs.trips.sort"};
@@ -175,7 +182,6 @@ void load_timetable(loader_config const& config,
             sort_by(t.seq_numbers_, t.stop_seq_, t.event_times_,
                     t.stop_headsigns_, t.distance_traveled_);
       }
-
       auto pred = minutes_after_midnight_t{0U};
       for (auto& [arr, dep] : t.event_times_) {
         arr = std::max(pred, arr);
@@ -289,8 +295,7 @@ void load_timetable(loader_config const& config,
     };
 
     auto stop_seq_numbers = std::basic_string<stop_idx_t>{};
-    auto const source_file_idx =
-        tt.register_source_file((d.path() / kStopTimesFile).generic_string());
+
     for (auto& trp : trip_data.data_) {
       std::uint32_t train_nr = 0U;
       if (is_train_number(trp.short_name_)) {

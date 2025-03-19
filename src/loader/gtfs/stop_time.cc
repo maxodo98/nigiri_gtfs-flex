@@ -45,17 +45,19 @@ void read_stop_times(timetable& tt,
                      std::string_view file_content,
                      bool const store_distances) {
   auto b = booking_rule_map_t{};
-  return read_stop_times(tt, source_idx_t{0}, trips, location_geojson_map_t{},
-                         stops, b, file_content, store_distances);
+  return read_stop_times(tt, source_idx_t{0}, source_file_idx_t{0}, trips,
+                         location_geojson_map_t{}, stops, b, file_content,
+                         store_distances);
 }
 
 void read_stop_times(timetable& tt,
-                     source_idx_t src,
+                     source_idx_t const src,
+                     source_file_idx_t const src_file,
                      trip_data& trips,
                      location_geojson_map_t const& geojsons,
                      locations_map const& stops,
                      booking_rule_map_t const& booking_rules,
-                     std::string_view file_content,
+                     std::string_view const file_content,
                      bool const store_distances) {
   struct csv_stop_time {
     // GTFS
@@ -94,6 +96,7 @@ void read_stop_times(timetable& tt,
   auto lookup_direction = cached_lookup(trips.directions_);
 
   hash_map<bitfield const*, bitfield_idx_t> registered_bitfields;
+  trip* t = nullptr;
   utl::line_range{
       utl::make_buf_reader(file_content, progress_tracker->update_fn())}  //
       | utl::csv<csv_stop_time>()  //
@@ -107,9 +110,9 @@ void read_stop_times(timetable& tt,
 
         ++i;
 
-        trip* t = nullptr;
         auto const t_id = s.trip_id_->view();
         if (last_trip != nullptr && t_id == last_trip_id) {
+          t->trip_idx_ = last_trip->trip_idx_;
           t = last_trip;
         } else {
           if (last_trip != nullptr) {
@@ -135,9 +138,13 @@ void read_stop_times(timetable& tt,
             id = s.location_geojson_id_->to_str();
           } else if (!s.stop_id_->empty()) {
             id = s.stop_id_->to_str();
+          } else if (!s.location_group_id_->empty()) {
+            log(log_lvl::info, "loader.gtfs.stop_time",
+                "location_group_id is not supported yet");
+            return;
           } else {
             log(log_lvl::error, "loader.gtfs.stop_time",
-                "location_id and stop_id is empty");
+                "no valid (stop, location, location_group)-id is available");
             return;
           }
           auto const g_it = geojsons.find(id);
@@ -173,7 +180,7 @@ void read_stop_times(timetable& tt,
           if (t->trip_idx_ == trip_idx_t::invalid()) {
             t->trip_idx_ = tt.register_trip_id(
                 t->id_, src, t->display_name(tt),
-                {source_file_idx_t{0}, t->from_line_, t->to_line_});
+                trip_debug{src_file, t->from_line_, t->to_line_});
             if (t->service_ != nullptr) {
               bitfield_idx_t bit_idx;
               if (registered_bitfields.contains(t->service_)) {

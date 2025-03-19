@@ -47,9 +47,9 @@ TEST(gtfs, booking_rule) {
       EXPECT_EQ(booking_rule.prior_notice_duration_min_, 0);
       EXPECT_EQ(booking_rule.prior_notice_duration_max_, 0);
       EXPECT_EQ(booking_rule.prior_notice_last_day_, 0);
-      EXPECT_EQ(booking_rule.prior_notice_last_time_, kInterpolate);
+      EXPECT_EQ(booking_rule.prior_notice_last_time_, hhmm_to_min("00:00:00"));
       EXPECT_EQ(booking_rule.prior_notice_start_day_, 0);
-      EXPECT_EQ(booking_rule.prior_notice_start_time_, kInterpolate);
+      EXPECT_EQ(booking_rule.prior_notice_start_time_, hhmm_to_min("00:00:00"));
       EXPECT_EQ(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
     });
   };
@@ -66,9 +66,9 @@ TEST(gtfs, booking_rule) {
     EXPECT_EQ(booking_rule.prior_notice_duration_min_, 5);
     EXPECT_EQ(booking_rule.prior_notice_duration_max_, 0);
     EXPECT_EQ(booking_rule.prior_notice_last_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_last_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_last_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.prior_notice_start_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_start_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_start_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
   });
 
@@ -80,9 +80,9 @@ TEST(gtfs, booking_rule) {
     EXPECT_EQ(booking_rule.prior_notice_duration_min_, 15);
     EXPECT_EQ(booking_rule.prior_notice_duration_max_, 1440);
     EXPECT_EQ(booking_rule.prior_notice_last_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_last_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_last_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.prior_notice_start_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_start_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_start_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
   });
 
@@ -94,9 +94,9 @@ TEST(gtfs, booking_rule) {
     EXPECT_EQ(booking_rule.prior_notice_duration_min_, 30);
     EXPECT_EQ(booking_rule.prior_notice_duration_max_, 10080);
     EXPECT_EQ(booking_rule.prior_notice_last_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_last_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_last_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.prior_notice_start_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_start_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_start_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
   });
 
@@ -111,7 +111,7 @@ TEST(gtfs, booking_rule) {
     EXPECT_EQ(booking_rule.prior_notice_last_day_, 1);
     EXPECT_EQ(booking_rule.prior_notice_last_time_, hhmm_to_min("12:00:00"));
     EXPECT_EQ(booking_rule.prior_notice_start_day_, 0);
-    EXPECT_EQ(booking_rule.prior_notice_start_time_, kInterpolate);
+    EXPECT_EQ(booking_rule.prior_notice_start_time_, hhmm_to_min("00:00:00"));
     EXPECT_EQ(booking_rule.bitfield_idx_, bitfield_idx_t::invalid());
   });
 

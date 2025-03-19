@@ -120,6 +120,7 @@ TEST(gtfs, read_stop_times_gtfs_flex_example_data) {
   auto const files = example_files();
 
   auto const src = source_idx_t{0};
+  auto const src_file = source_file_idx_t{0};
 
   timetable tt;
   tt.date_range_ = interval{date::sys_days{July / 1 / 2006},
@@ -157,8 +158,9 @@ TEST(gtfs, read_stop_times_gtfs_flex_example_data) {
   auto const booking_rules = read_booking_rules(
       booking_rule_services, tt, files.get_file(kBookingRulesFile).data());
 
-  read_stop_times(tt, src, trip_data, location_geojsons, stops, booking_rules,
-                  files.get_file(kStopTimesGTFSFlexFile).data(), false);
+  read_stop_times(tt, src, src_file, trip_data, location_geojsons, stops,
+                  booking_rules, files.get_file(kStopTimesGTFSFlexFile).data(),
+                  false);
 
   auto const test_stop_time =
       [&](std::string const& geo_id, std::string const& trip_id,

@@ -21,7 +21,7 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
   struct csv_booking_rule {
     utl::csv_col<utl::cstr, UTL_NAME("booking_rule_id")> id_;
     utl::csv_col<utl::cstr, UTL_NAME("booking_type")> type_;
-    utl::csv_col<std::uint16_t, UTL_NAME("prior_notice_duration_min")>
+    utl::csv_col<utl::cstr, UTL_NAME("prior_notice_duration_min")>
         prior_notice_duration_min_;
     utl::csv_col<std::uint16_t, UTL_NAME("prior_notice_duration_max")>
         prior_notice_duration_max_;
@@ -71,9 +71,10 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
            switch (type) {
              case kRealTimeBooking: break;
              case kSameDayBooking: {
-               if (b.prior_notice_duration_min_.val() == 0) {
+               if (b.prior_notice_duration_min_->empty()) {
                  log(log_lvl::error, "loader.gtfs.booking_rule",
-                     "prior_notice_duration_min cannot be 0");
+                     "\"prior_notice_duration_min\" must not be empty if "
+                     "\"type\" is \"1\"!");
                  return kEmptyPair;
                }
                break;
@@ -81,26 +82,29 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
              case kPriorDaysBooking: {
                if (b.prior_notice_last_day_.val() == 0) {
                  log(log_lvl::error, "loader.gtfs.booking_rule",
-                     "prior_notice_duration_min cannot be 0");
+                     "\"prior_notice_last_day\" must not be \"0\" or empty if "
+                     "\"type\" is \"2\"!");
                  return kEmptyPair;
                }
                if (b.prior_notice_last_time_->empty()) {
                  log(log_lvl::error, "loader.gtfs.booking_rule",
-                     "prior_notice_last_time_ cannot be empty");
+                     "\"prior_notice_last_time\" must not be empty if \"type\" "
+                     "is \"2\"!");
                  return kEmptyPair;
                }
                if (!b.prior_notice_start_day_->empty() &&
                    b.prior_notice_start_time_->empty()) {
                  log(log_lvl::error, "loader.gtfs.booking_rule",
-                     "prior_notice_start_time_ cannot be empty if "
-                     "prior_notice_start_day_ is not empty");
+                     "\"prior_notice_start_time\" must not be empty if "
+                     "\"prior_notice_start_day\" is not empty");
                  return kEmptyPair;
                }
                break;
              }
              default:
                log(log_lvl::error, "loader.gtfs.booking_rule",
-                   "booking_type \"{}\": must be either 1, 2 or 3",
+                   "booking_type \"{}\" does not exist. It must be either 0, 1 "
+                   "or 2",
                    b.type_.val());
                return kEmptyPair;
            }
@@ -125,7 +129,11 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
                    b.id_->to_str(),
                    {.type_ = type,
                     .prior_notice_duration_min_ =
-                        b.prior_notice_duration_min_.val(),
+                        b.prior_notice_duration_min_->empty()
+                            ? static_cast<std::uint16_t>(0)
+                            : static_cast<std::uint16_t>(
+                                  strtoul(b.prior_notice_duration_min_->c_str(),
+                                          NULL, 10)),
                     .prior_notice_duration_max_ =
                         b.prior_notice_duration_max_.val(),
                     .prior_notice_last_day_ = b.prior_notice_last_day_.val(),

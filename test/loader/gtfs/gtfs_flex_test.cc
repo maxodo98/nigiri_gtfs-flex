@@ -25,6 +25,7 @@ TEST(gtfs, loader_test) {
                             date::sys_days{date::December / 31 / 2025}};
   auto const files = example_files();
   auto const src = source_idx_t{0};
+  auto const src_file = source_file_idx_t{0};
 
   auto const config = loader::loader_config{};
   auto timezones = tz_map{};
@@ -49,7 +50,7 @@ TEST(gtfs, loader_test) {
   const auto geojsons = read_location_geojson(
       tt, files.get_file(kLoaderLocationGeojsonFile).data());
 
-  read_stop_times(tt, src, trip_data, geojsons, stops, booking_rules,
+  read_stop_times(tt, src, src_file, trip_data, geojsons, stops, booking_rules,
                   files.get_file(kLoaderStopTimesFile).data(), false);
 
   auto const test_location = [&](std::string const& id,

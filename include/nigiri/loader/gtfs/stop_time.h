@@ -13,12 +13,13 @@ void read_stop_times(timetable& tt,
                      bool);
 
 void read_stop_times(timetable&,
-                     source_idx_t,
+                     source_idx_t const,
+                     source_file_idx_t const,
                      trip_data&,
                      location_geojson_map_t const&,
                      locations_map const&,
                      booking_rule_map_t const&,
-                     std::string_view file_content,
-                     bool);
+                     std::string_view const file_content,
+                     bool const);
 
 }  // namespace nigiri::loader::gtfs
