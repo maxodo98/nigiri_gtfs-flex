@@ -738,6 +738,7 @@ struct timetable {
   vector_map<trip_idx_t, bitfield_idx_t> trip_service_;
 
   hash_map<geometry_trip_idx, geometry_trip_idx_t> geometry_trip_idxs_;
+  vector_map<location_idx_t, bool> has_trips_;
   vector_map<geometry_trip_idx_t, stop_window> window_times_;
   vector_map<geometry_trip_idx_t, booking_rule_idx_t> pickup_booking_rules_;
   vector_map<geometry_trip_idx_t, booking_rule_idx_t> dropoff_booking_rules_;

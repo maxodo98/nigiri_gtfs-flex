@@ -95,6 +95,7 @@ void read_stop_times(timetable& tt,
       .in_high(file_content.size());
   auto lookup_direction = cached_lookup(trips.directions_);
 
+  tt.has_trips_.resize(tt.locations_.coordinates_.size());
   hash_map<bitfield const*, bitfield_idx_t> registered_bitfields;
   trip* t = nullptr;
   utl::line_range{
@@ -202,6 +203,7 @@ void read_stop_times(timetable& tt,
         }
 
         try {
+          tt.has_trips_[stops.at(s.stop_id_->view())] = true;
 
           auto const arrival_time = hhmm_to_min(*s.arrival_time_);
           auto const departure_time = hhmm_to_min(*s.departure_time_);

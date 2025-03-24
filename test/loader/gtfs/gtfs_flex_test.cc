@@ -54,10 +54,11 @@ TEST(gtfs, loader_test) {
                   files.get_file(kLoaderStopTimesFile).data(), false);
 
   auto const test_location = [&](std::string const& id,
-                                 geo::latlng const&& expected_pos) {
+                                 geo::latlng const&& expected_pos, bool expected_has_trips=false) {
     ASSERT_TRUE(stops.contains(id));
     ASSERT_LE(stops.at(id), tt.locations_.coordinates_.size());
     EXPECT_EQ(tt.locations_.coordinates_[stops.at(id)], expected_pos);
+    EXPECT_EQ(expected_has_trips, tt.has_trips_[stops.at(id)]);
   };
   auto const test_booking_rules =
       [&](std::string const& id, booking_rule const&& expected_booking_rule) {
