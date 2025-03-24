@@ -393,6 +393,8 @@ enum pickup_dropoff_type : std::uint8_t {
   kCoordinateWithDriverType = 3
 };
 
+enum td_offset_entry_type { kNone, kLastDeparture, kFirstArrival };
+
 enum class event_type { kArr, kDep };
 
 enum class direction {

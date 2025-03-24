@@ -430,3 +430,95 @@ TEST(td_footpath, backward) {
   EXPECT_TRUE(called);
   EXPECT_EQ(1h + 10min, x.duration());
 }
+
+TEST(td_footpath, forward_windows_with_gaps) {
+  auto const fps = std::vector<td_footpath>{
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{1970_y / January / 1},
+       .duration_ = footpath::kMaxDuration},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
+       .duration_ = 3h},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 20h,
+       .duration_ = footpath::kMaxDuration},
+
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 8h,
+       .duration_ = 1h},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
+       .duration_ = 1h,
+       .type_ = kLastDeparture},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 12h,
+       .duration_ = 1h,
+       .type_ = kFirstArrival},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 14h,
+       .duration_ = footpath::kMaxDuration},
+
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 6h,
+       .duration_ = 4h},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 18h,
+       .duration_ = footpath::kMaxDuration}};
+
+  auto const d = get_td_duration<direction::kForward>(
+      fps, sys_days{2020_y / March / 30} + 9h + 30min);
+  // auto const r =
+  //     get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+  //                   routing::td_offset>(fps, sys_days{2024_y / June / 19} +
+  //                   8h);
+  ASSERT_TRUE(d.has_value());
+  EXPECT_EQ(2h + 30min, *d);
+  // ASSERT_TRUE(r.has_value());
+  // EXPECT_EQ(40min, r->duration_with_waiting_time_);
+}
+
+TEST(td_footpath, backward_windows_with_gaps) {
+  auto const fps = std::vector<td_footpath>{
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{1970_y / January / 1},
+       .duration_ = footpath::kMaxDuration},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
+       .duration_ = 3h},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 20h,
+       .duration_ = footpath::kMaxDuration},
+
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 8h,
+       .duration_ = 1h},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
+       .duration_ = 1h,
+       .type_ = kLastDeparture},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 12h,
+       .duration_ = 1h,
+       .type_ = kFirstArrival},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 14h,
+       .duration_ = footpath::kMaxDuration},
+
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 6h,
+       .duration_ = 4h},
+      {.target_ = location_idx_t{0U},
+       .valid_from_ = sys_days{2020_y / March / 30} + 18h,
+       .duration_ = footpath::kMaxDuration}};
+
+  auto const d = get_td_duration<direction::kBackward>(
+      fps, sys_days{2020_y / March / 30} + 12h + 30min);
+  // auto const r =
+  //     get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+  //                   routing::td_offset>(fps, sys_days{2024_y / June / 19} +
+  //                   8h);
+  ASSERT_TRUE(d.has_value());
+  EXPECT_EQ(2h + 30min, *d);
+  // ASSERT_TRUE(r.has_value());
+  // EXPECT_EQ(40min, r->duration_with_waiting_time_);
+}

@@ -54,6 +54,7 @@ struct td_offset {
   unixtime_t valid_from_;
   duration_t duration_;
   transport_mode_id_t transport_mode_id_;
+  td_offset_entry_type type_{kNone};
 };
 
 struct via_stop {
