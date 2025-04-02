@@ -197,6 +197,7 @@ std::optional<duration_with_waiting> get_td_duration_split(Collection const& c,
     if (from->duration_ != footpath::kMaxDuration &&
         from->valid_from_ <= t - from->duration_) {
       best = &*from;
+      best_duration = from->duration_;
       dep = t - from->duration_;
     }
 
@@ -237,7 +238,6 @@ std::optional<duration_with_waiting> get_td_duration_split(Collection const& c,
         }
       }
     }
-
     if (best != nullptr && best_duration != footpath::kMaxDuration) {
       return std::optional(duration_with_waiting{
           best_duration,

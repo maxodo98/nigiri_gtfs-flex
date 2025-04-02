@@ -103,11 +103,8 @@ void read_stop_times(timetable& tt,
       | utl::csv<csv_stop_time>()  //
       |
       utl::for_each([&](csv_stop_time const& s) {
-        auto const is_flex_trip =
-            *s.pickup_type_ == kPhoneAgencyType ||
-            *s.pickup_type_ == kCoordinateWithDriverType ||
-            *s.drop_off_type_ == kPhoneAgencyType ||
-            *s.drop_off_type_ == kCoordinateWithDriverType;
+        auto const is_flex_trip = *s.pickup_type_ == kPhoneAgencyType ||
+                                  *s.drop_off_type_ == kPhoneAgencyType;
 
         ++i;
 
