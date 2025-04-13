@@ -87,15 +87,16 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
 
     if (auto const it = q.td_start_.find(leg_start_location);
         it != end(q.td_start_)) {
-      auto const duration =
-          get_td_duration<flip(SearchDir)>(it->second, leg_start_time);
-      if (duration.has_value() &&
+      auto const td_result = get_td_result<SearchDir, std::vector<td_offset>, td_offset>(it->second, leg_start_time);
+
+      if (td_result.has_value() &&
           is_better_or_eq(j.start_time_,
-                          leg_start_time - (kFwd ? 1 : -1) * *duration)) {
-        if (it->second.back().transport_mode_id_ >=
+                          leg_start_time - (kFwd ? 1 : -1) * td_result->duration_with_waiting_time_)) {
+        auto const duration = td_result->duration_with_waiting_time_;
+        if (td_result->offset_.transport_mode_id_ >=
             kFlexTransportModeIdOffset) {
           auto const f_idx =
-              it->second.back().transport_mode_id_ - kFlexTransportModeIdOffset;
+              td_result->offset_.transport_mode_id_ - kFlexTransportModeIdOffset;
           if (f_idx < 0 || f_idx >= flex_identifications.size()) {
             return std::nullopt;
           }
@@ -103,26 +104,26 @@ std::optional<journey::leg> find_start_footpath(timetable const& tt,
           return journey::leg{SearchDir,
                               get_special_station(special_station::kStart),
                               leg_start_location,
-                              leg_start_time - (kFwd ? 1 : -1) * (*duration),
+                              leg_start_time - (kFwd ? 1 : -1) * (duration),
                               leg_start_time,
                               flex{leg_start_location, f_data.geometry_from_,
-                                   f_data.geometry_to_, f_data.trip_, *duration,
-                                   it->second.back().transport_mode_id_}};
+                                   f_data.geometry_to_, f_data.trip_, duration,
+                                   td_result->offset_.transport_mode_id_}};
         }
         return journey::leg{SearchDir,
                             get_special_station(special_station::kStart),
                             leg_start_location,
-                            leg_start_time - (kFwd ? 1 : -1) * (*duration),
+                            leg_start_time - (kFwd ? 1 : -1) * (duration),
                             leg_start_time,
-                            offset{leg_start_location, *duration,
-                                   it->second.back().transport_mode_id_}};
+                            offset{leg_start_location, duration,
+                                   td_result->offset_.transport_mode_id_}};
       } else {
         trace(
             "excluded td journey start at leg_start_location={}: "
             "leg_start_time={}, duration={}, start={}, journey_start={}\n",
             location{tt, leg_start_location}, leg_start_time,
-            duration.has_value() ? *duration : kInfeasible,
-            leg_start_time - (kFwd ? 1 : -1) * *duration, j.start_time_);
+            td_result.has_value() ? td_result->duration_with_waiting_time_ : kInfeasible,
+            leg_start_time - (kFwd ? 1 : -1) * td_result->duration_with_waiting_time_, j.start_time_);
       }
     }
   } else {
@@ -592,15 +593,13 @@ void reconstruct_journey_with_vias(timetable const& tt,
         auto const r =
             get_td_result<flip(SearchDir), std::vector<td_offset>, td_offset>(
                 td, delta_to_unix(base, curr_time));
-        // auto const d = get_td_duration<flip(SearchDir)>(
-        //     td, delta_to_unix(base, curr_time));
         if (r.has_value()) {
           auto const is_flex =
               r->offset_.transport_mode_id_ >= kFlexTransportModeIdOffset;
 
           auto const ret = find_dest_leg(k, l,
                                          {from, r->duration_with_waiting_time_,
-                                          td.back().transport_mode_id_},
+                                          r->offset_.transport_mode_id_},
                                          !is_flex, is_flex);
           if (ret.has_value()) {
             return std::move(*ret);
