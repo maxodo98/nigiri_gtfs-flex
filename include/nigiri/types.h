@@ -344,7 +344,7 @@ using timezone = variant<pair<string, void const*>, tz_offsets>;
 struct booking_rule {
   CISTA_COMPARABLE()
 
-  uint8_t type_{MAXUINT8};
+  uint8_t type_{std::numeric_limits<uint8_t>::max()};
   uint16_t prior_notice_duration_min_{0};
   uint16_t prior_notice_duration_max_{0};
   uint16_t prior_notice_last_day_{0};
@@ -392,8 +392,6 @@ enum pickup_dropoff_type : std::uint8_t {
   kPhoneAgencyType = 2,
   kCoordinateWithDriverType = 3
 };
-
-enum td_offset_entry_type { kNone, kLastDeparture, kFirstArrival };
 
 enum class event_type { kArr, kDep };
 

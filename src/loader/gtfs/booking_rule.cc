@@ -126,7 +126,6 @@ booking_rule_map_t read_booking_rules(traffic_days_t const& services,
            return std::pair{
                b.id_->to_str(),
                tt.register_booking_rule(
-                   b.id_->to_str(),
                    {.type_ = type,
                     .prior_notice_duration_min_ =
                         b.prior_notice_duration_min_->empty()

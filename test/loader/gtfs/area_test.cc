@@ -16,7 +16,6 @@ using namespace nigiri::loader::gtfs;
 
 TEST(gtfs, area) {
   timetable tt;
-  source_idx_t src = source_idx_t{0};
 
   auto const files = example_files();
 
@@ -39,7 +38,7 @@ TEST(gtfs, area) {
 
         auto const& actual_stops = tt.area_idx_to_location_idxs_.at(area_idx);
         ASSERT_EQ(actual_stops.size(), expected_stop_ids.size());
-        for (auto i = 0; i < expected_stop_ids.size(); ++i) {
+        for (auto i = 0U; i < expected_stop_ids.size(); ++i) {
           EXPECT_EQ(actual_stops.at(i), stops.at(expected_stop_ids.at(i)));
         }
       };

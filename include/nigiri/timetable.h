@@ -175,10 +175,11 @@ struct timetable {
     auto const type = tg_geom_typeof(geometry);
     tg_poly const* poly;
     switch (type) {
-      case TG_POINT:
+      case TG_POINT: {
         auto const p = tg_geom_point(geometry);
         geometry_.push_back(point_to_multipolygon(point{p.x, p.y}));
         break;
+      }
       case TG_POLYGON:
         poly = tg_geom_poly(geometry);
         geometry_.push_back(polygon_to_multipolygon(create_polygon(poly)));
@@ -209,7 +210,7 @@ struct timetable {
 
   template <typename RT>
   void register_locations_in_geometries(std::unique_ptr<RT>& location_rtree) {
-    for (auto i = 0; i < geometry_.size(); i++) {
+    for (auto i = 0U; i < geometry_.size(); i++) {
       auto const idx = geometry_idx_t{i};
       auto b = geometry_[idx].bounding_box();
       auto const m = create_tg_multipoly(geometry_[idx]);
@@ -223,46 +224,6 @@ struct timetable {
       tg_geom_free(m);
     }
   }
-
-  // template <typename Fn>
-  // void calculate_geometry_durations(Fn& calc_duration) {
-  //   hash_map<trip_idx_t, std::vector<geometry_idx_t>> trip_to_geos;
-  //   auto const size = geometry_idx_to_trip_idxs_.size();
-  //   for (auto i = 0; i < size; ++i) {
-  //     auto const g_idx = geometry_idx_t{i};
-  //     for (auto t : geometry_idx_to_trip_idxs_[g_idx]) {
-  //       auto& el = utl::get_or_create(
-  //           trip_to_geos, t, [] { return std::vector<geometry_idx_t>{}; });
-  //       el.push_back(g_idx);
-  //     }
-  //   }
-  //
-  //   geometry_duration_.clear();
-  //   geometry_duration_.resize(size);
-  //   for (auto i = 0; i < size; ++i) {
-  //     auto geo_idx = geometry_idx_t{i};
-  //     for (auto j = 0; j < size; ++j) {
-  //       geometry_duration_[geo_idx].push_back(duration_t::max());
-  //     }
-  //   }
-  //
-  //   for (const auto& geos : trip_to_geos.values() | std::views::values) {
-  //     std::for_each(geos.begin(), geos.end(), [&](auto const& start) {
-  //       for (auto i = 0; i < geos.size(); ++i) {
-  //         auto const& end = geos[i];
-  //         if (start == end) {
-  //           geometry_duration_[start][i] = duration_t::zero();
-  //         } else if (geometry_duration_.at(start).at(i) == duration_t::max())
-  //         {
-  //           auto const& startpoint = geometry_.at(start).get_center();
-  //           auto const& endpoint = geometry_.at(end).get_center();
-  //           geometry_duration_[start][i] = calc_duration(startpoint,
-  //           endpoint);
-  //         }
-  //       }
-  //     });
-  //   }
-  // }
 
   geometry_trip_idx_t register_geometry_trip(
       geometry_idx_t const geo_idx,
@@ -450,8 +411,7 @@ struct timetable {
     return provider_idx_t{idx};
   }
 
-  booking_rule_idx_t register_booking_rule(std::string const& id,
-                                           booking_rule&& b) {
+  booking_rule_idx_t register_booking_rule(booking_rule&& b) {
     auto const idx = booking_rules_.size();
     booking_rules_.emplace_back(b);
     return booking_rule_idx_t{idx};

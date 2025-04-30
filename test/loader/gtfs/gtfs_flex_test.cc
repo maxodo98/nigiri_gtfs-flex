@@ -54,7 +54,8 @@ TEST(gtfs, loader_test) {
                   files.get_file(kLoaderStopTimesFile).data(), false);
 
   auto const test_location = [&](std::string const& id,
-                                 geo::latlng const&& expected_pos, bool expected_has_trips=false) {
+                                 geo::latlng const&& expected_pos,
+                                 bool expected_has_trips = false) {
     ASSERT_TRUE(stops.contains(id));
     ASSERT_LE(stops.at(id), tt.locations_.coordinates_.size());
     EXPECT_EQ(tt.locations_.coordinates_[stops.at(id)], expected_pos);
@@ -104,7 +105,7 @@ TEST(gtfs, loader_test) {
 
         ASSERT_EQ(tt.geometry_idx_to_trip_idxs_[geojsons.at(id)].size(),
                   expected_related_trips.size());
-        for (auto i = 0; i < expected_related_trips.size(); ++i) {
+        for (auto i = 0U; i < expected_related_trips.size(); ++i) {
           EXPECT_EQ(tt.geometry_idx_to_trip_idxs_[geojsons.at(id)][i],
                     expected_related_trips[i]);
         }
@@ -116,7 +117,7 @@ TEST(gtfs, loader_test) {
         ASSERT_LT(idx, tt.trip_idx_to_geometry_idxs_.size());
         ASSERT_EQ(tt.trip_idx_to_geometry_idxs_[idx].size(),
                   expected_geometries.size());
-        for (auto i = 0; i < expected_geometries.size(); ++i) {
+        for (auto i = 0U; i < expected_geometries.size(); ++i) {
           EXPECT_EQ(tt.trip_idx_to_geometry_idxs_[idx][i],
                     expected_geometries[i]);
         }

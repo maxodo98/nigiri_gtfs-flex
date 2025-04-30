@@ -230,26 +230,26 @@ TEST(td_footpath, backward_unclosed_offsets) {
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(3min, r->duration_with_waiting_time_);
 
-  // fps = std::vector<routing::td_offset>{
-  //     {.valid_from_ = sys_days{2024_y / January / 01},
-  //      .duration_ = 1h,
-  //      .transport_mode_id_ = 0},
-  //     {.valid_from_ = sys_days{2024_y / January / 01} + 20h + 00min,
-  //      .duration_ = footpath::kMaxDuration,
-  //      .transport_mode_id_ = 0},
-  //     {.valid_from_ = unixtime_t::min(),
-  //      .duration_ = 3min,
-  //      .transport_mode_id_ = 1}};
-  //
-  // d = get_td_duration<direction::kBackward>(
-  //     fps, sys_days{2024_y / January / 01} + 14h + 30min);
-  // r = get_td_result<direction::kBackward, std::vector<routing::td_offset>,
-  //                   routing::td_offset>(
-  //     fps, sys_days{2024_y / January / 01} + 14h + 30min);
-  // ASSERT_TRUE(d.has_value());
-  // EXPECT_EQ(3min, *d);
-  // ASSERT_TRUE(r.has_value());
-  // EXPECT_EQ(3min, r->duration_with_waiting_time_);
+  fps = std::vector<routing::td_offset>{
+      {.valid_from_ = sys_days{2024_y / January / 01},
+       .duration_ = 1h,
+       .transport_mode_id_ = 0},
+      {.valid_from_ = sys_days{2024_y / January / 01} + 20h + 00min,
+       .duration_ = footpath::kMaxDuration,
+       .transport_mode_id_ = 0},
+      {.valid_from_ = unixtime_t::min(),
+       .duration_ = 3min,
+       .transport_mode_id_ = 1}};
+
+  d = get_td_duration<direction::kBackward>(
+      fps, sys_days{2024_y / January / 01} + 14h + 30min);
+  r = get_td_result<direction::kBackward, std::vector<routing::td_offset>,
+                    routing::td_offset>(
+      fps, sys_days{2024_y / January / 01} + 14h + 30min);
+  ASSERT_TRUE(d.has_value());
+  EXPECT_EQ(3min, *d);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(3min, r->duration_with_waiting_time_);
 }
 
 TEST(td_footpath, forward_parallel_trips) {
@@ -301,6 +301,8 @@ TEST(td_footpath, forward_parallel_trips) {
       get_td_result<direction::kForward, std::vector<routing::td_offset>,
                     routing::td_offset>(
           fps, sys_days{2024_y / June / 19} + 8h + 10min);
+  ASSERT_TRUE(d2.has_value());
+  EXPECT_EQ(30min, *d2);
   ASSERT_TRUE(r2.has_value());
   EXPECT_EQ(30min, r2->duration_with_waiting_time_);
 
@@ -518,18 +520,10 @@ TEST(td_footpath, forward_windows_with_gaps) {
        .duration_ = footpath::kMaxDuration},
 
       {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 8h,
+       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
        .duration_ = 1h},
       {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
-       .duration_ = 1h,
-       .type_ = kLastDeparture},
-      {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 12h,
-       .duration_ = 1h,
-       .type_ = kFirstArrival},
-      {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 14h,
+       .valid_from_ = sys_days{2020_y / March / 30} + 11h,
        .duration_ = footpath::kMaxDuration},
 
       {.target_ = location_idx_t{0U},
@@ -543,7 +537,7 @@ TEST(td_footpath, forward_windows_with_gaps) {
       fps, sys_days{2020_y / March / 30} + 9h + 30min);
 
   ASSERT_TRUE(d.has_value());
-  EXPECT_EQ(2h + 30min, *d);
+  EXPECT_EQ(1h + 30min, *d);
 }
 
 TEST(td_footpath, backward_windows_with_gaps) {
@@ -559,18 +553,10 @@ TEST(td_footpath, backward_windows_with_gaps) {
        .duration_ = footpath::kMaxDuration},
 
       {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 8h,
+       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
        .duration_ = 1h},
       {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 10h,
-       .duration_ = 1h,
-       .type_ = kLastDeparture},
-      {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 12h,
-       .duration_ = 1h,
-       .type_ = kFirstArrival},
-      {.target_ = location_idx_t{0U},
-       .valid_from_ = sys_days{2020_y / March / 30} + 14h,
+       .valid_from_ = sys_days{2020_y / March / 30} + 11h,
        .duration_ = footpath::kMaxDuration},
 
       {.target_ = location_idx_t{0U},

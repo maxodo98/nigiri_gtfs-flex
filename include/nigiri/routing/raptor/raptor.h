@@ -145,7 +145,7 @@ struct raptor {
                  unixtime_t const t_start,
                  unixtime_t const t_end) {
     auto const v = (Vias != 0 && is_via_[0][to_idx(l)]) ? 1U : 0U;
-    trace_upd("adding start {}: {}, v={}\n", location{tt_, l}, t, v);
+    trace_upd("adding start {}: {}, v={}\n", location{tt_, l}, t_end, v);
     best_[to_idx(l)][v] = unix_to_delta(base(), t_end);
     round_times_end_[0U][to_idx(l)][v] = unix_to_delta(base(), t_end);
     round_times_start_[0U][to_idx(l)][v] = unix_to_delta(base(), t_start);
@@ -237,7 +237,7 @@ struct raptor {
         auto const dest_time = round_times_end_[k][i][Vias];
         if (dest_time != kInvalid) {
           trace("ADDING JOURNEY: start={}, dest={} @ {}, transfers={}\n",
-                start_time, delta_to_unix(base(), round_times_[k][i][Vias]),
+                start_time, delta_to_unix(base(), round_times_end_[k][i][Vias]),
                 location{tt_, location_idx_t{i}}, k - 1);
           auto const [optimal, it, dominated_by] = results.add(
               journey{.legs_ = {},
@@ -735,16 +735,16 @@ private:
                   is_better(by_transport, time_at_dest_[k]) &&
                   lb_[l_idx] != kUnreachable &&
                   is_better(by_transport + dir(lb_[l_idx]), time_at_dest_[k])) {
-                trace_upd(
-                    "┊ │k={} v={}->{}   RT name={}, dbg={}, "
-                    "time_by_transport={}, "
-                    "BETTER THAN dest_best={} => update, {} marking station "
-                    "{} (destination)!\n",
-                    k, v, dest_v, tt_.transport_name(et[v].t_idx_),
-                    tt_.dbg(et[v].t_idx_), to_unix(by_transport),
-                    to_unix(best_dest),
-                    !is_better(by_transport, best_dest) ? "NOT" : "",
-                    location{tt_, stp.location_idx()});
+                // trace_upd(
+                //     "┊ │k={} v={}->{}   RT name={}, dbg={}, "
+                //     "time_by_transport={}, "
+                //     "BETTER THAN dest_best={} => update, {} marking station "
+                //     "{} (destination)!\n",
+                //     k, v, dest_v, tt_.transport_name(et[v].t_idx_),
+                //     tt_.dbg(et[v].t_idx_), to_unix(by_transport),
+                //     to_unix(best_dest),
+                //     !is_better(by_transport, best_dest) ? "NOT" : "",
+                //     location{tt_, stp.location_idx()});
 
                 ++stats_.n_earliest_arrival_updated_by_route_;
                 tmp_[l_idx][dest_v] =
@@ -817,8 +817,8 @@ private:
             "best={}, "
             "tmp={}\n",
             k, v, v_offset[v], stop_idx, location{tt_, stp.location_idx()},
-            to_unix(round_times_[k - 1][l_idx][v]), to_unix(best_[l_idx][v]),
-            to_unix(tmp_[l_idx][v]));
+            to_unix(round_times_end_[k - 1][l_idx][v]),
+            to_unix(best_[l_idx][v]), to_unix(tmp_[l_idx][v]));
 
         if constexpr (WithSectionBikeFilter) {
           if (!is_first &&
@@ -906,7 +906,7 @@ private:
                 k, v, target_v, location{tt_, location_idx_t{l_idx}},
                 tt_.transport_name(et[v].t_idx_), tt_.dbg(et[v].t_idx_),
                 to_unix(by_transport),
-                to_unix(round_times_[k - 1][l_idx][target_v]),
+                to_unix(round_times_end_[k - 1][l_idx][target_v]),
                 to_unix(best_[l_idx][target_v]), to_unix(tmp_[l_idx][target_v]),
                 to_unix(current_best[v]), location{tt_, location_idx_t{l_idx}},
                 lb_[l_idx], to_unix(time_at_dest_[k]),

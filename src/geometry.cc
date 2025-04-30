@@ -47,7 +47,7 @@ tg_ring* create_tg_ring(ring const& ring) {
   }
   std::vector<tg_point> points;
   points.reserve(ring.points_.size());
-  for (auto i = 0; i < ring.points_.size(); ++i) {
+  for (auto i = 0U; i < ring.points_.size(); ++i) {
     points.emplace_back(ring.points_.at(i).x_, ring.points_.at(i).y_);
   }
   auto* pointer = &points[0];
@@ -64,7 +64,7 @@ tg_poly* create_tg_poly(polygon const& poly) {
   if (poly.holes_.empty()) {
     return tg_poly_new(exterior, nullptr, 0);
   }
-  for (auto i = 0; i < poly.holes_.size(); ++i) {
+  for (auto i = 0U; i < poly.holes_.size(); ++i) {
     rings.push_back(create_tg_ring(poly.holes_.at(i)));
   }
   auto* pointer = &rings[0];

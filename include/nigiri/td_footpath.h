@@ -23,7 +23,6 @@ struct td_footpath {
   location_idx_t target_;
   unixtime_t valid_from_;
   duration_t duration_;
-  td_offset_entry_type type_;
 };
 
 template <typename T>
@@ -38,7 +37,8 @@ struct duration_with_waiting {
 };
 
 template <direction SearchDir, typename Collection, typename T, typename Func>
-std::optional<std::variant<duration_t, duration_with_waiting, td_result<T>>> get_td_result(Collection const& c, unixtime_t const t, Func const& f) {
+std::optional<std::variant<duration_t, duration_with_waiting, td_result<T>>>
+get_td_result(Collection const& c, unixtime_t const t, Func const& f) {
   auto const r = to_range<SearchDir>(c);
   auto const from = r.begin();
   auto const to = r.end();
@@ -51,22 +51,10 @@ std::optional<std::variant<duration_t, duration_with_waiting, td_result<T>>> get
 
     for (auto it = from; it != to; ++it) {
       if ((curr == nullptr || curr->duration_ == footpath::kMaxDuration ||
-           it->valid_from_ < t + curr->duration_) &&
-          it->type_ != kLastDeparture) {
+           it->valid_from_ < t + curr->duration_)) {
         curr = &*it;
       } else {
         auto new_duration = curr->duration_;
-        if (it->type_ == kLastDeparture) {
-          if (it->valid_from_ < t) {
-            it += 2;  // skip first arrival and last arrival of offset
-            curr = nullptr;
-            continue;
-          }
-          auto const first_arrival = (it + 1)->valid_from_;
-          new_duration = first_arrival - std::max(t, curr->valid_from_);
-
-          it += 2;  // skip first arrival and last arrival of offset
-        }
         auto const new_arr = std::max(t, curr->valid_from_) + new_duration;
         if (best == nullptr || new_arr < arr) {
           best = &*curr;
@@ -106,27 +94,6 @@ std::optional<std::variant<duration_t, duration_with_waiting, td_result<T>>> get
     using namespace std::chrono_literals;
     auto tmp_arr = unixtime_t{};
     for (auto const [a, b] : utl::pairwise(it_range{from, to})) {
-      if (a.type_ == kLastDeparture) {
-        tmp_arr = unixtime_t::max();
-        continue;
-      }
-      if (b.type_ == kFirstArrival && b.valid_from_ <= t) {
-        tmp_arr = std::min(a.valid_from_, t);
-        continue;
-      }
-      if (b.type_ == kLastDeparture && a.type_ == kFirstArrival) {
-        if (tmp_arr == unixtime_t::max()) {
-          continue;
-        }
-        auto const new_dep = b.valid_from_;
-        if (dep < new_dep) {
-          best_duration = tmp_arr - new_dep;
-          dep = new_dep;
-          best = &b;
-        }
-        tmp_arr = unixtime_t::max();
-        continue;
-      }
       if (b.duration_ != footpath::kMaxDuration &&
           std::max(b.valid_from_, dep) + b.duration_ <= t &&
           interval{b.valid_from_, a.valid_from_ + 1min}.overlaps(
@@ -148,20 +115,23 @@ std::optional<std::variant<duration_t, duration_with_waiting, td_result<T>>> get
   }
 }
 
-
 template <direction SearchDir, typename Collection, typename T>
 std::optional<td_result<T>> get_td_result(Collection const& c,
                                           unixtime_t const t) {
-  auto result = get_td_result<SearchDir, Collection, T>(c, t, [&](T const& best, duration_t const best_duration, unixtime_t const arr_or_dep) {
-    if (SearchDir == direction::kForward) {
-      return std::variant<duration_t, duration_with_waiting, td_result<T>>(
-           td_result<T>({arr_or_dep - t, best}));
-    }
-    return std::variant<duration_t, duration_with_waiting, td_result<T>>(
-           td_result<T>({t - arr_or_dep, best}));
-  });
+  auto result = get_td_result<SearchDir, Collection, T>(
+      c, t,
+      [&](T const& best, [[maybe_unused]] duration_t const best_duration,
+          unixtime_t const arr_or_dep) {
+        if (SearchDir == direction::kForward) {
+          return std::variant<duration_t, duration_with_waiting, td_result<T>>(
+              td_result<T>({arr_or_dep - t, best}));
+        }
+        return std::variant<duration_t, duration_with_waiting, td_result<T>>(
+            td_result<T>({t - arr_or_dep, best}));
+      });
 
-  if (result.has_value() && std::holds_alternative<td_result<T>>(result.value())) {
+  if (result.has_value() &&
+      std::holds_alternative<td_result<T>>(result.value())) {
     return std::get<td_result<T>>(result.value());
   }
   return std::nullopt;
@@ -173,12 +143,19 @@ std::optional<duration_with_waiting> get_td_duration_split(Collection const& c,
   auto const r = to_range<SearchDir>(c);
   auto const from = r.begin();
   using Type = std::decay_t<decltype(*from)>;
-  auto result =  get_td_result<SearchDir, Collection, Type>(c, t, [&](Type const& best, duration_t const best_duration, unixtime_t const arr_or_dep) {
-    auto const waiting_time = (SearchDir == direction::kForward ? (arr_or_dep - t): (t - arr_or_dep)) - best_duration;
-    return std::variant<duration_t, duration_with_waiting, td_result<Type>>(
-                      duration_with_waiting{best_duration, waiting_time});
-});
-  if (result.has_value() && std::holds_alternative<duration_with_waiting>(result.value())) {
+  auto result = get_td_result<SearchDir, Collection, Type>(
+      c, t,
+      [&]([[maybe_unused]] Type const& best, duration_t const best_duration,
+          unixtime_t const arr_or_dep) {
+        auto const waiting_time =
+            (SearchDir == direction::kForward ? (arr_or_dep - t)
+                                              : (t - arr_or_dep)) -
+            best_duration;
+        return std::variant<duration_t, duration_with_waiting, td_result<Type>>(
+            duration_with_waiting{best_duration, waiting_time});
+      });
+  if (result.has_value() &&
+      std::holds_alternative<duration_with_waiting>(result.value())) {
     return std::get<duration_with_waiting>(result.value());
   }
   return std::nullopt;
@@ -190,23 +167,22 @@ std::optional<duration_t> get_td_duration(Collection const& c,
   auto const r = to_range<SearchDir>(c);
   auto const from = r.begin();
   using Type = std::decay_t<decltype(*from)>;
-  auto result =  get_td_result<SearchDir, Collection, Type>(c, t, [&](Type const& best, duration_t const best_duration, unixtime_t const arr_or_dep) {
-    auto const duration_with_waiting_time = SearchDir == direction::kForward ? (arr_or_dep - t): (t - arr_or_dep);
-    return std::variant<duration_t, duration_with_waiting, td_result<Type>>(duration_with_waiting_time);
-  });
-  if (result.has_value() && std::holds_alternative<duration_t>(result.value())) {
+  auto result = get_td_result<SearchDir, Collection, Type>(
+      c, t,
+      [&]([[maybe_unused]] Type const& best,
+          [[maybe_unused]] duration_t const best_duration,
+          unixtime_t const arr_or_dep) {
+        auto const duration_with_waiting_time = SearchDir == direction::kForward
+                                                    ? (arr_or_dep - t)
+                                                    : (t - arr_or_dep);
+        return std::variant<duration_t, duration_with_waiting, td_result<Type>>(
+            duration_with_waiting_time);
+      });
+  if (result.has_value() &&
+      std::holds_alternative<duration_t>(result.value())) {
     return std::get<duration_t>(result.value());
   }
   return std::nullopt;
-
-  //
-  //
-  // auto const duration_with_waiting = get_td_duration_split<SearchDir>(c, t);
-  // if (duration_with_waiting.has_value()) {
-  //   return duration_with_waiting->duration_ +
-  //          duration_with_waiting->waiting_time_;
-  // }
-  // return std::nullopt;
 }
 
 template <typename Collection>

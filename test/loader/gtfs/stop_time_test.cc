@@ -177,14 +177,14 @@ TEST(gtfs, read_stop_times_gtfs_flex_example_data) {
         ASSERT_LT(geo_idx.v_, tt.geometry_idx_to_trip_idxs_.size());
         ASSERT_EQ(tt.geometry_idx_to_trip_idxs_[geo_idx].size(),
                   expected_trips.size());
-        for (auto i = 0; i < expected_trips.size(); ++i) {
+        for (auto i = 0U; i < expected_trips.size(); ++i) {
           auto const id = *(expected_trips.begin() + i);
           auto const gtfs_t_idx = trip_data.trips_[id];
           auto t_idx = trip_data.data_[gtfs_t_idx].trip_idx_;
           EXPECT_EQ(tt.geometry_idx_to_trip_idxs_[geo_idx][i], t_idx);
         }
 
-        for (auto i = 0; i < expected_geos.size(); ++i) {
+        for (auto i = 0U; i < expected_geos.size(); ++i) {
           auto const id = *(expected_geos.begin() + i);
           auto g_idx = location_geojsons.at(id);
           EXPECT_EQ(tt.trip_idx_to_geometry_idxs_[trip_idx][i], g_idx);

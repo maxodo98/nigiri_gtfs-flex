@@ -140,7 +140,7 @@
       "      ENTRY NOT POSSIBLE AT {}: k={} k-1={}, v={}->{}, "          \
       "best_at_stop=min({}, {})={}={} > event_time={}={}\n",             \
       location{tt, l}, k, k - 1, v, new_v, best_state[to_idx(l)][new_v], \
-      round_times[k - 1][to_idx(l)][new_v], best(k - 1, l),              \
+      round_times_end[k - 1][to_idx(l)][new_v], best(k - 1, l),          \
       delta_to_unix(base, best(k - 1, l)), event_time,                   \
       fr[stop_idx].time(kFwd ? event_type::kDep : event_type::kArr))
 
@@ -152,13 +152,13 @@
       delta_to_unix(base, best(k - 1, l)), delta_to_unix(base, event_time), v, \
       new_v)
 
-#define trace_rc_fp_intermodal_dest_mismatch                               \
-  trace_reconstruct(                                                       \
-      "  BAD intermodal+footpath dest offset: {}@{} --{}--> "              \
-      "{}@{} --{}--> END@{} (type={})\n",                                  \
-      location{tt, fp.target()}, round_times[k][to_idx(fp.target())],      \
-      adjusted_transfer_time(q.transfer_time_settings_, fp.duration()),    \
-      location{tt, eq}, round_times[k][to_idx(eq)], dest_offset.duration_, \
+#define trace_rc_fp_intermodal_dest_mismatch                                   \
+  trace_reconstruct(                                                           \
+      "  BAD intermodal+footpath dest offset: {}@{} --{}--> "                  \
+      "{}@{} --{}--> END@{} (type={})\n",                                      \
+      location{tt, fp.target()}, round_times_end[k][to_idx(fp.target())],      \
+      adjusted_transfer_time(q.transfer_time_settings_, fp.duration()),        \
+      location{tt, eq}, round_times_end[k][to_idx(eq)], dest_offset.duration_, \
       curr_time, dest_offset.type())
 
 #define trace_rc_fp_intermodal_dest_match                        \

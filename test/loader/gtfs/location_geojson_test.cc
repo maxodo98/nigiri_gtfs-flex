@@ -71,6 +71,10 @@ TEST(gtfs, location_geojson) {
           EXPECT_TRUE(tg_geom_covers(expected_geom, actual_multipolygon));
           break;
         }
+        default: {
+          ASSERT_TRUE(actual_type == TG_POINT || actual_type == TG_POLYGON ||
+                      actual_type == TG_MULTIPOLYGON);
+        }
       };
     });
   };
@@ -182,23 +186,24 @@ TEST(gtfs, register_locations_in_geometries) {
   auto const geojson = read_location_geojson(
       tt, files.get_file(kLocationsWithinGeometriesGeojsonFile).data());
 
-  auto const outside_berlin =
-      geo::latlng{52.610329253088594, 13.20597275574309};
-  auto const inside_berlin = geo::latlng{52.52382076496181, 13.403639322418002};
-  auto const edge_berlin = geo::latlng{52.406589559298396, 13.340254133857854};
-  auto const way_outside_berlin =
-      geo::latlng{52.51106243823082, 13.72059314902458};
-
-  auto const within_hole_hannover =
-      geo::latlng{52.30395481022279, 9.648938978164438};
-  auto const inside_hannover =
-      geo::latlng{52.070567698004766, 10.499473611847066};
-  auto const hole_edge_hannover =
-      geo::latlng{52.2668775457241, 10.160283681204987};
-  auto const outside_hannover =
-      geo::latlng{51.740426496286176, 9.032883031459278};
-  auto const way_outside_hannover =
-      geo::latlng{51.52928071175947, 9.934063502721187};
+  // auto const outside_berlin =
+  //     geo::latlng{52.610329253088594, 13.20597275574309};
+  // auto const inside_berlin =
+  // geo::latlng{52.52382076496181, 13.403639322418002}; auto const edge_berlin
+  // = geo::latlng{52.406589559298396, 13.340254133857854}; auto const
+  // way_outside_berlin =
+  //     geo::latlng{52.51106243823082, 13.72059314902458};
+  //
+  // auto const within_hole_hannover =
+  //     geo::latlng{52.30395481022279, 9.648938978164438};
+  // auto const inside_hannover =
+  //     geo::latlng{52.070567698004766, 10.499473611847066};
+  // auto const hole_edge_hannover =
+  //     geo::latlng{52.2668775457241, 10.160283681204987};
+  // auto const outside_hannover =
+  //     geo::latlng{51.740426496286176, 9.032883031459278};
+  // auto const way_outside_hannover =
+  //     geo::latlng{51.52928071175947, 9.934063502721187};
 
   struct pointer_rtree {
     pointer_rtree(timetable& tt) { tt_ = &tt; }
@@ -208,7 +213,7 @@ TEST(gtfs, register_locations_in_geometries) {
     void find(geo::box const& b,
               std::function<void(geo::latlng const&, location_idx_t const)> fn)
         const {
-      for (auto i = 0; i < tt_->locations_.coordinates_.size(); ++i) {
+      for (auto i = 0U; i < tt_->locations_.coordinates_.size(); ++i) {
         auto const idx = location_idx_t{i};
         if (b.contains(tt_->locations_.coordinates_[idx])) {
           fn(tt_->locations_.coordinates_[idx], idx);
